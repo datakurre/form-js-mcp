@@ -1,0 +1,73 @@
+{
+  "type": "default",
+  "id": "Form_example",
+  "schemaVersion": 19,
+  "exporter": {
+    "name": "form-js-mcp",
+    "version": "1.0.0"
+  },
+  "components": [
+    {
+      "type": "text",
+      "id": "Text_heading",
+      "text": "# Invoice\nPlease fill in the invoice details below."
+    },
+    {
+      "key": "creditor",
+      "label": "Creditor",
+      "type": "textfield",
+      "id": "Textfield_creditor",
+      "validate": { "required": true },
+      "layout": { "columns": 8, "row": "Row_1" }
+    },
+    {
+      "key": "invoiceNumber",
+      "label": "Invoice Number",
+      "type": "textfield",
+      "id": "Textfield_invoiceNumber",
+      "description": "Format: INV-NNNN",
+      "validate": { "required": true, "pattern": "^INV-[0-9]+$", "patternErrorMessage": "Must match INV-NNNN format" },
+      "layout": { "columns": 8, "row": "Row_1" }
+    },
+    {
+      "key": "amount",
+      "label": "Amount",
+      "type": "number",
+      "id": "Number_amount",
+      "validate": { "required": true, "min": 0 },
+      "layout": { "columns": 8, "row": "Row_2" }
+    },
+    {
+      "key": "currency",
+      "label": "Currency",
+      "type": "select",
+      "id": "Select_currency",
+      "values": [
+        { "label": "EUR", "value": "EUR" },
+        { "label": "USD", "value": "USD" },
+        { "label": "GBP", "value": "GBP" }
+      ],
+      "defaultValue": "EUR",
+      "layout": { "columns": 8, "row": "Row_2" }
+    },
+    {
+      "key": "approved",
+      "label": "Approved",
+      "type": "checkbox",
+      "id": "Checkbox_approved"
+    },
+    {
+      "key": "approverComments",
+      "label": "Comments",
+      "type": "textarea",
+      "id": "Textarea_approverComments",
+      "conditional": { "hide": "=approved = false" }
+    },
+    {
+      "key": "submit",
+      "label": "Submit",
+      "type": "button",
+      "id": "Button_submit"
+    }
+  ]
+}

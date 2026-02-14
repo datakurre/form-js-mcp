@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "form-js-mcp": {
+      "command": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "env": {}
+    }
+  }
+}
