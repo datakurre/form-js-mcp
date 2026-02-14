@@ -4,7 +4,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { getForm } from '../form-manager';
+import { getForm, notifyFormChanged } from '../form-manager';
 import { type FormState, type FormComponent, type ToolResult, type HintLevel } from '../types';
 import { KEYED_FIELD_TYPES, SUPPORTED_FIELD_TYPES } from '../constants';
 import { validateFormSchema, type ValidationIssue } from '../validator';
@@ -95,9 +95,11 @@ export function requireComponent(form: FormState, componentId: string): FormComp
 
 // ── Version tracking ───────────────────────────────────────────────────────
 
-/** Bump the mutation version counter on a form. */
-export function bumpVersion(form: FormState): void {
+/** Bump the mutation version counter on a form.
+ *  When `formId` is provided, also notifies the persistence layer. */
+export function bumpVersion(form: FormState, formId?: string): void {
   form.version = (form.version ?? 0) + 1;
+  if (formId) notifyFormChanged(formId);
 }
 
 // ── Response helpers ───────────────────────────────────────────────────────

@@ -92,7 +92,7 @@ export async function handleAddFormComponent(args: any): Promise<ToolResult> {
     targetComponents.push(component);
   }
 
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     component,

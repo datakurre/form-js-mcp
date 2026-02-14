@@ -60,7 +60,7 @@ export async function handleDuplicateFormComponent(args: any): Promise<ToolResul
   const clone = deepCloneComponent(parentArr[idx], existingKeys);
 
   parentArr.splice(idx + 1, 0, clone);
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     component: clone,

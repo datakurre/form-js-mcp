@@ -71,7 +71,7 @@ export async function handleSetFormValidation(args: any): Promise<ToolResult> {
   }
 
   comp.validate = validate;
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     componentId: args.componentId,

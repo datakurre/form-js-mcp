@@ -132,7 +132,7 @@ export async function handleReplaceFormComponent(args: any): Promise<ToolResult>
   // If the new type is keyed but the component has no key, we need to note that
   // (the validator will catch it via hints)
 
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     componentId: args.componentId,

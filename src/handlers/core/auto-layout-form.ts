@@ -222,7 +222,7 @@ export async function handleAutoLayoutForm(args: any): Promise<ToolResult> {
     }
   }
 
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     formId: args.formId,

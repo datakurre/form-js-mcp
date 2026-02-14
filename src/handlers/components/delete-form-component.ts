@@ -38,7 +38,7 @@ export async function handleDeleteFormComponent(args: any): Promise<ToolResult> 
   const idx = parentArr.findIndex((c) => c.id === args.componentId);
   parentArr.splice(idx, 1);
 
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     deleted: args.componentId,

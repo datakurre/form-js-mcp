@@ -62,7 +62,7 @@ export async function handleSetFormOptions(args: any): Promise<ToolResult> {
 
   comp.values = options;
   comp.valuesExpression = undefined; // Remove dynamic expression if present
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     componentId: args.componentId,

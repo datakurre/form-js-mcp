@@ -65,7 +65,7 @@ export async function handleMoveFormComponent(args: any): Promise<ToolResult> {
     targetArr.push(comp);
   }
 
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     moved: args.componentId,

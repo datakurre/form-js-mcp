@@ -54,7 +54,7 @@ export async function handleSetFormComponentProperties(args: any): Promise<ToolR
     }
   }
 
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     componentId: args.componentId,

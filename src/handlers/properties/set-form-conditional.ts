@@ -37,7 +37,7 @@ export async function handleSetFormConditional(args: any): Promise<ToolResult> {
 
   const conditional: FormConditional = { hide: args.hide };
   comp.conditional = conditional;
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     componentId: args.componentId,

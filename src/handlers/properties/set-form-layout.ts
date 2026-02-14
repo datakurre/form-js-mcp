@@ -45,7 +45,7 @@ export async function handleSetFormLayout(args: any): Promise<ToolResult> {
   const layout: FormLayout = comp.layout ?? {};
   layout.columns = columns;
   comp.layout = layout;
-  bumpVersion(form);
+  bumpVersion(form, args.formId);
 
   return mutationResult(form, {
     componentId: args.componentId,

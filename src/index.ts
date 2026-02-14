@@ -32,6 +32,7 @@ import { type ToolModule } from './module';
 import { formModule } from './form-module';
 import { RESOURCE_TEMPLATES, listResources, readResource } from './resources';
 import { listPrompts, getPrompt } from './prompts';
+import { enablePersistence } from './persistence';
 
 // ── CLI argument parsing ───────────────────────────────────────────────────
 
@@ -149,7 +150,13 @@ server.setRequestHandler(GetPromptRequestSchema, async (request: any): Promise<a
 });
 
 async function main() {
-  const _options = parseArgs(process.argv);
+  const options = parseArgs(process.argv);
+
+  // Enable file-backed persistence if requested
+  if (options.persistDir) {
+    const loaded = enablePersistence(options.persistDir);
+    console.error(`Persistence enabled in ${options.persistDir} (${loaded} form(s) loaded)`);
+  }
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
