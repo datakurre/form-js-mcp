@@ -9,10 +9,19 @@ import { handleCloneForm } from '../../src/handlers/core/clone-form';
 import { handleValidateForm } from '../../src/handlers/core/validate-form';
 import { handleSummarizeForm } from '../../src/handlers/core/summarize-form';
 import { handleGetFormVariables } from '../../src/handlers/core/get-form-variables';
+import { handleDiffForms } from '../../src/handlers/core/diff-forms';
+import { handleAutoLayoutForm } from '../../src/handlers/core/auto-layout-form';
+import { handleBatchFormOperations } from '../../src/handlers/core/batch-form-operations';
+import {
+  handleFormHistory,
+  pushSnapshot,
+  clearAllHistory,
+} from '../../src/handlers/core/form-history';
 
 describe('core handlers', () => {
   beforeEach(() => {
     clearForms();
+    clearAllHistory();
   });
 
   // ── create_form ────────────────────────────────────────────────────────
@@ -215,6 +224,273 @@ describe('core handlers', () => {
       expect(result.inputKeys).toContain('name');
       expect(result.inputKeys).toContain('age');
       expect(result.total).toBe(2);
+    });
+  });
+
+  // ── diff_forms ─────────────────────────────────────────────────────────
+
+  describe('diff_forms', () => {
+    test('identical forms', async () => {
+      const { formId: id1, form: f1 } = createForm('A');
+      const { formId: id2, form: f2 } = createForm('B');
+      f1.schema.components = [{ type: 'textfield', id: 'a', key: 'name', label: 'Name' }];
+      f2.schema.components = [{ type: 'textfield', id: 'a', key: 'name', label: 'Name' }];
+
+      const result = parseResult(await handleDiffForms({ formId1: id1, formId2: id2 }));
+      expect(result.identical).toBe(true);
+      expect(result.added).toHaveLength(0);
+      expect(result.removed).toHaveLength(0);
+      expect(result.changed).toHaveLength(0);
+    });
+
+    test('different forms — added and removed', async () => {
+      const { formId: id1, form: f1 } = createForm('A');
+      const { formId: id2, form: f2 } = createForm('B');
+      f1.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+      f2.schema.components = [{ type: 'number', id: 'b', key: 'age' }];
+
+      const result = parseResult(await handleDiffForms({ formId1: id1, formId2: id2 }));
+      expect(result.identical).toBe(false);
+      expect(result.removed).toHaveLength(1);
+      expect(result.removed[0].id).toBe('a');
+      expect(result.added).toHaveLength(1);
+      expect(result.added[0].id).toBe('b');
+    });
+
+    test('changed properties', async () => {
+      const { formId: id1, form: f1 } = createForm('A');
+      const { formId: id2, form: f2 } = createForm('B');
+      f1.schema.components = [{ type: 'textfield', id: 'a', key: 'name', label: 'Name' }];
+      f2.schema.components = [{ type: 'textfield', id: 'a', key: 'name', label: 'Full Name' }];
+
+      const result = parseResult(await handleDiffForms({ formId1: id1, formId2: id2 }));
+      expect(result.identical).toBe(false);
+      expect(result.changed).toHaveLength(1);
+      expect(result.changed[0].componentId).toBe('a');
+      expect(result.changed[0].changes.some((c: any) => c.property === 'label')).toBe(true);
+    });
+
+    test('nested diffs', async () => {
+      const { formId: id1, form: f1 } = createForm('A');
+      const { formId: id2, form: f2 } = createForm('B');
+      f1.schema.components = [
+        {
+          type: 'group',
+          id: 'g1',
+          components: [{ type: 'textfield', id: 'inner', key: 'x' }],
+        },
+      ];
+      f2.schema.components = [
+        {
+          type: 'group',
+          id: 'g1',
+          components: [{ type: 'textfield', id: 'inner', key: 'y' }],
+        },
+      ];
+
+      const result = parseResult(await handleDiffForms({ formId1: id1, formId2: id2 }));
+      expect(result.identical).toBe(false);
+      expect(result.changed.some((c: any) => c.componentId === 'inner')).toBe(true);
+    });
+  });
+
+  // ── auto_layout_form ───────────────────────────────────────────────────
+
+  describe('auto_layout_form', () => {
+    test('single column layout', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'name' },
+        { type: 'number', id: 'b', key: 'age' },
+      ];
+      const result = parseResult(await handleAutoLayoutForm({ formId }));
+      expect(result.strategy).toBe('single-column');
+      expect(result.componentsLaidOut).toBe(2);
+      expect(form.schema.components[0].layout?.columns).toBe(16);
+      expect(form.schema.components[1].layout?.columns).toBe(16);
+    });
+
+    test('two column layout', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'first' },
+        { type: 'textfield', id: 'b', key: 'last' },
+      ];
+      const result = parseResult(await handleAutoLayoutForm({ formId, strategy: 'two-column' }));
+      expect(result.strategy).toBe('two-column');
+      expect(result.componentsLaidOut).toBe(2);
+      expect(form.schema.components[0].layout?.row).toBeDefined();
+      expect(form.schema.components[0].layout?.row).toBe(form.schema.components[1].layout?.row);
+    });
+
+    test('compact layout', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'name' },
+        { type: 'checkbox', id: 'b', key: 'agree' },
+        { type: 'separator', id: 'c' },
+      ];
+      const result = parseResult(await handleAutoLayoutForm({ formId, strategy: 'compact' }));
+      expect(result.strategy).toBe('compact');
+      expect(result.componentsLaidOut).toBeGreaterThanOrEqual(3);
+      // Separator is full-width
+      expect(form.schema.components[2].layout?.columns).toBe(16);
+    });
+
+    test('two column with full-width separators', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'first' },
+        { type: 'separator', id: 's' },
+        { type: 'textfield', id: 'b', key: 'last' },
+      ];
+      const result = parseResult(await handleAutoLayoutForm({ formId, strategy: 'two-column' }));
+      expect(result.componentsLaidOut).toBe(3);
+      // Separator should be full width
+      expect(form.schema.components[1].layout?.columns).toBe(16);
+    });
+
+    test('rejects invalid strategy', async () => {
+      const { formId } = createForm();
+      await expect(handleAutoLayoutForm({ formId, strategy: 'invalid' })).rejects.toThrow(
+        'Invalid strategy'
+      );
+    });
+  });
+
+  // ── batch_form_operations ──────────────────────────────────────────────
+
+  describe('batch_form_operations', () => {
+    test('batch succeeds', async () => {
+      const { formId } = createForm();
+      const result = parseResult(
+        await handleBatchFormOperations({
+          formId,
+          operations: [
+            {
+              tool: 'add_form_component',
+              args: { formId, type: 'textfield', label: 'Name' },
+            },
+            {
+              tool: 'add_form_component',
+              args: { formId, type: 'number', label: 'Age' },
+            },
+          ],
+        })
+      );
+      expect(result.success).toBe(true);
+      expect(result.completedOperations).toBe(2);
+    });
+
+    test('batch with error rolls back', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+
+      const result = parseResult(
+        await handleBatchFormOperations({
+          formId,
+          operations: [
+            {
+              tool: 'add_form_component',
+              args: { formId, type: 'textfield', label: 'Extra' },
+            },
+            {
+              tool: 'delete_form_component',
+              args: { formId, componentId: 'nonexistent' },
+            },
+          ],
+        })
+      );
+      expect(result.success).toBe(false);
+      expect(result.rolledBack).toBe(true);
+      // Should have rolled back — only original component remains
+      expect(form.schema.components).toHaveLength(1);
+      expect(form.schema.components[0].id).toBe('a');
+    });
+
+    test('rejects empty operations', async () => {
+      const { formId } = createForm();
+      await expect(handleBatchFormOperations({ formId, operations: [] })).rejects.toThrow(
+        'non-empty'
+      );
+    });
+
+    test('prevents recursive batch calls', async () => {
+      const { formId } = createForm();
+      const result = parseResult(
+        await handleBatchFormOperations({
+          formId,
+          operations: [
+            {
+              tool: 'batch_form_operations',
+              args: { formId, operations: [] },
+            },
+          ],
+        })
+      );
+      expect(result.success).toBe(false);
+      expect(result.rolledBack).toBe(true);
+    });
+  });
+
+  // ── form_history ───────────────────────────────────────────────────────
+
+  describe('form_history', () => {
+    test('undo mutation', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [];
+
+      // Push a snapshot of the empty state before mutating
+      pushSnapshot(formId, form.schema);
+
+      // Simulate a mutation
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+      form.version = 1;
+
+      // Undo should restore empty state
+      const result = parseResult(await handleFormHistory({ formId, action: 'undo' }));
+      expect(result.action).toBe('undo');
+      expect(result.componentCount).toBe(0);
+      expect(form.schema.components).toHaveLength(0);
+    });
+
+    test('redo after undo', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [];
+
+      pushSnapshot(formId, form.schema);
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+      form.version = 1;
+
+      // Undo
+      await handleFormHistory({ formId, action: 'undo' });
+      expect(form.schema.components).toHaveLength(0);
+
+      // Redo
+      const result = parseResult(await handleFormHistory({ formId, action: 'redo' }));
+      expect(result.action).toBe('redo');
+      expect(result.componentCount).toBe(1);
+    });
+
+    test('undo past start throws error', async () => {
+      const { formId } = createForm();
+      await expect(handleFormHistory({ formId, action: 'undo' })).rejects.toThrow(
+        'Nothing to undo'
+      );
+    });
+
+    test('redo without undo throws error', async () => {
+      const { formId } = createForm();
+      await expect(handleFormHistory({ formId, action: 'redo' })).rejects.toThrow(
+        'Nothing to redo'
+      );
+    });
+
+    test('invalid action throws error', async () => {
+      const { formId } = createForm();
+      await expect(handleFormHistory({ formId, action: 'rewind' })).rejects.toThrow(
+        'Invalid action'
+      );
     });
   });
 });

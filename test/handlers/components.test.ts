@@ -5,6 +5,7 @@ import { handleDeleteFormComponent } from '../../src/handlers/components/delete-
 import { handleMoveFormComponent } from '../../src/handlers/components/move-form-component';
 import { handleDuplicateFormComponent } from '../../src/handlers/components/duplicate-form-component';
 import { handleListFormComponents } from '../../src/handlers/components/list-form-components';
+import { handleReplaceFormComponent } from '../../src/handlers/components/replace-form-component';
 
 describe('component handlers', () => {
   beforeEach(() => {
@@ -209,6 +210,94 @@ describe('component handlers', () => {
       const result = parseResult(await handleDeleteFormComponent({ formId, componentId: 'a' }));
       // After deleting the only component, form is valid (empty)
       expect(result._hints).toBeUndefined();
+    });
+  });
+
+  // ── replace_form_component ─────────────────────────────────────────────
+
+  describe('replace_form_component', () => {
+    test('compatible replacement preserves key, label, validate', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        {
+          type: 'textfield',
+          id: 'a',
+          key: 'name',
+          label: 'Name',
+          validate: { required: true },
+        },
+      ];
+      const result = parseResult(
+        await handleReplaceFormComponent({ formId, componentId: 'a', newType: 'textarea' })
+      );
+      expect(result.oldType).toBe('textfield');
+      expect(result.newType).toBe('textarea');
+      expect(result.preserved).toContain('key');
+      expect(result.preserved).toContain('label');
+      expect(result.preserved).toContain('validate');
+      expect(form.schema.components[0].type).toBe('textarea');
+      expect(form.schema.components[0].key).toBe('name');
+    });
+
+    test('incompatible replacement loses type-specific props', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        {
+          type: 'select',
+          id: 'a',
+          key: 'choice',
+          label: 'Pick one',
+          values: [
+            { label: 'A', value: 'a' },
+            { label: 'B', value: 'b' },
+          ],
+        },
+      ];
+      const result = parseResult(
+        await handleReplaceFormComponent({ formId, componentId: 'a', newType: 'textfield' })
+      );
+      expect(result.removed).toContain('values');
+      expect(form.schema.components[0].type).toBe('textfield');
+      expect(form.schema.components[0].values).toBeUndefined();
+      // key and label should be preserved
+      expect(form.schema.components[0].key).toBe('choice');
+      expect(form.schema.components[0].label).toBe('Pick one');
+    });
+
+    test('keyed to non-keyed removes key and validate', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        {
+          type: 'textfield',
+          id: 'a',
+          key: 'name',
+          label: 'Name',
+          validate: { required: true },
+        },
+      ];
+      const result = parseResult(
+        await handleReplaceFormComponent({ formId, componentId: 'a', newType: 'text' })
+      );
+      expect(result.removed).toContain('key');
+      expect(result.removed).toContain('validate');
+      expect(form.schema.components[0].type).toBe('text');
+      expect(form.schema.components[0].key).toBeUndefined();
+    });
+
+    test('rejects same type', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+      await expect(
+        handleReplaceFormComponent({ formId, componentId: 'a', newType: 'textfield' })
+      ).rejects.toThrow('already type');
+    });
+
+    test('rejects unsupported type', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+      await expect(
+        handleReplaceFormComponent({ formId, componentId: 'a', newType: 'fancywidget' })
+      ).rejects.toThrow('Unsupported');
     });
   });
 });

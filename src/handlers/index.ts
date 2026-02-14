@@ -18,6 +18,10 @@ import * as CloneForm from './core/clone-form';
 import * as ValidateForm from './core/validate-form';
 import * as SummarizeForm from './core/summarize-form';
 import * as GetFormVariables from './core/get-form-variables';
+import * as DiffForms from './core/diff-forms';
+import * as AutoLayoutForm from './core/auto-layout-form';
+import * as BatchFormOperations from './core/batch-form-operations';
+import * as FormHistory from './core/form-history';
 
 // ── Component handlers ─────────────────────────────────────────────────────
 import * as AddFormComponent from './components/add-form-component';
@@ -25,6 +29,7 @@ import * as DeleteFormComponent from './components/delete-form-component';
 import * as MoveFormComponent from './components/move-form-component';
 import * as DuplicateFormComponent from './components/duplicate-form-component';
 import * as ListFormComponents from './components/list-form-components';
+import * as ReplaceFormComponent from './components/replace-form-component';
 
 // ── Property handlers ──────────────────────────────────────────────────────
 import * as GetProps from './properties/get-form-component-properties';
@@ -60,6 +65,13 @@ export const TOOL_REGISTRY: readonly ToolRegistration[] = [
     definition: GetFormVariables.TOOL_DEFINITION,
     handler: GetFormVariables.handleGetFormVariables,
   },
+  { definition: DiffForms.TOOL_DEFINITION, handler: DiffForms.handleDiffForms },
+  { definition: AutoLayoutForm.TOOL_DEFINITION, handler: AutoLayoutForm.handleAutoLayoutForm },
+  {
+    definition: BatchFormOperations.TOOL_DEFINITION,
+    handler: BatchFormOperations.handleBatchFormOperations,
+  },
+  { definition: FormHistory.TOOL_DEFINITION, handler: FormHistory.handleFormHistory },
 
   // Component manipulation
   {
@@ -81,6 +93,10 @@ export const TOOL_REGISTRY: readonly ToolRegistration[] = [
   {
     definition: ListFormComponents.TOOL_DEFINITION,
     handler: ListFormComponents.handleListFormComponents,
+  },
+  {
+    definition: ReplaceFormComponent.TOOL_DEFINITION,
+    handler: ReplaceFormComponent.handleReplaceFormComponent,
   },
 
   // Property management
