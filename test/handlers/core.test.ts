@@ -97,6 +97,21 @@ describe('core handlers', () => {
     test('rejects unknown form', async () => {
       await expect(handleExportForm({ formId: 'nonexistent' })).rejects.toThrow('not found');
     });
+
+    test('blocks export when form has validation errors', async () => {
+      const { formId, form } = createForm('Invalid');
+      // Add a keyed type without a key — produces a validation error
+      form.schema.components = [{ type: 'textfield', id: 'nokey' }];
+      await expect(handleExportForm({ formId })).rejects.toThrow('Export blocked');
+    });
+
+    test('allows export with skipValidation=true despite errors', async () => {
+      const { formId, form } = createForm('Invalid');
+      form.schema.components = [{ type: 'textfield', id: 'nokey' }];
+      const result = await handleExportForm({ formId, skipValidation: true });
+      const json = JSON.parse(result.content[0].text);
+      expect(json.components).toHaveLength(1);
+    });
   });
 
   // ── delete_form ────────────────────────────────────────────────────────
@@ -109,6 +124,15 @@ describe('core handlers', () => {
 
       // Cannot delete again
       await expect(handleDeleteForm({ formId })).rejects.toThrow('not found');
+    });
+
+    test('clears history on delete', async () => {
+      const { formId, form } = createForm();
+      pushSnapshot(formId, form.schema);
+      expect(getHistorySize(formId).undoCount).toBe(1);
+
+      await handleDeleteForm({ formId });
+      expect(getHistorySize(formId).undoCount).toBe(0);
     });
   });
 

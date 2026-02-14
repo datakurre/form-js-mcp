@@ -1,6 +1,6 @@
 # Form Field Type Reference
 
-Comprehensive reference for all 22 supported form-js field types with JSON
+Comprehensive reference for all 21 supported form-js field types with JSON
 examples, supported properties, and validation options.
 
 ---

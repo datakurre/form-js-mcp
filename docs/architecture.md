@@ -67,6 +67,12 @@ manipulates form schemas entirely in memory using plain object operations.
        ┌──────────────┐
        │   types.ts    │
        └──────────────┘
+
+       ┌──────────────┐
+       │persistence.ts │  Optional file-backed auto-save
+       │ (hooks into   │  via form-manager change listener
+       │ form-manager) │
+       └──────────────┘
 ```
 
 ## Data Flow
@@ -222,6 +228,7 @@ validation warnings and/or errors are included in every mutation response.
 | `src/constants.ts`          | Field type classifications, grid defaults, exporter metadata                                                                   |
 | `src/form-manager.ts`       | In-memory form store (`Map<string, FormState>`) + schema helpers                                                               |
 | `src/validator.ts`          | Semantic validation (duplicate IDs/keys, missing keys, unknown types)                                                          |
+| `src/persistence.ts`        | Optional file-backed persistence (auto-save `.form` files + `meta.json`)                                                       |
 | `src/resources.ts`          | MCP resource endpoints (`form://` URIs)                                                                                        |
 | `src/prompts.ts`            | MCP prompt workflow implementations                                                                                            |
 | `src/prompt-definitions.ts` | Prompt definition objects (name, description, arguments)                                                                       |

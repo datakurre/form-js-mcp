@@ -29,6 +29,20 @@ interface ComponentSummary {
   childCount?: number;
 }
 
+function listDirectChildren(components: FormComponent[], typeFilter?: string): ComponentSummary[] {
+  const results: ComponentSummary[] = [];
+  for (const comp of components) {
+    if (!typeFilter || comp.type === typeFilter) {
+      const summary: ComponentSummary = { id: comp.id, type: comp.type };
+      if (comp.key) summary.key = comp.key;
+      if (comp.label) summary.label = comp.label;
+      if (comp.components) summary.childCount = comp.components.length;
+      results.push(summary);
+    }
+  }
+  return results;
+}
+
 function flattenComponents(components: FormComponent[], typeFilter?: string): ComponentSummary[] {
   const results: ComponentSummary[] = [];
   for (const comp of components) {
@@ -58,7 +72,7 @@ export async function handleListFormComponents(args: any): Promise<ToolResult> {
   }
 
   const results = args.parentId
-    ? flattenComponents(components, args.type)
+    ? listDirectChildren(components, args.type)
     : flattenComponents(components, args.type);
 
   return jsonResult({

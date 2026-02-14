@@ -255,6 +255,32 @@ describe('component handlers', () => {
       const result = parseResult(await handleListFormComponents({ formId, parentId: 'g1' }));
       expect(result.count).toBe(1);
     });
+
+    test('parentId lists only direct children, not nested', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        {
+          type: 'group',
+          id: 'g1',
+          components: [
+            {
+              type: 'group',
+              id: 'g2',
+              label: 'Inner Group',
+              components: [{ type: 'textfield', id: 'nested', key: 'nested' }],
+            },
+            { type: 'textfield', id: 'direct', key: 'direct' },
+          ],
+        },
+      ];
+      const result = parseResult(await handleListFormComponents({ formId, parentId: 'g1' }));
+      // Should only list g2 and direct, not nested inside g2
+      expect(result.count).toBe(2);
+      const ids = result.components.map((c: any) => c.id);
+      expect(ids).toContain('g2');
+      expect(ids).toContain('direct');
+      expect(ids).not.toContain('nested');
+    });
   });
 
   // ── Implicit validation hints (P4.5) ───────────────────────────────────
@@ -387,6 +413,29 @@ describe('component handlers', () => {
       await expect(
         handleReplaceFormComponent({ formId, componentId: 'a', newType: 'fancywidget' })
       ).rejects.toThrow('Unsupported');
+    });
+
+    test('auto-generates key when replacing non-keyed to keyed type', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'text', id: 'a', label: 'Notes' }];
+      const result = parseResult(
+        await handleReplaceFormComponent({ formId, componentId: 'a', newType: 'textfield' })
+      );
+      expect(result.newType).toBe('textfield');
+      expect(form.schema.components[0].key).toBeTruthy();
+      expect(form.schema.components[0].type).toBe('textfield');
+    });
+
+    test('auto-generated key avoids duplicates', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'b', key: 'notes', label: 'Notes' },
+        { type: 'text', id: 'a', label: 'Notes' },
+      ];
+      await handleReplaceFormComponent({ formId, componentId: 'a', newType: 'textfield' });
+      expect(form.schema.components[1].key).toBeTruthy();
+      // Should not be 'notes' since that already exists
+      expect(form.schema.components[1].key).not.toBe('notes');
     });
   });
 });

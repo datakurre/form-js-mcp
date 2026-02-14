@@ -179,6 +179,28 @@ describe('property handlers', () => {
       );
       expect(result.conditional.hide).toBe('=showName = false');
     });
+
+    test('clears conditional when hide is empty string', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'name', conditional: { hide: '=x > 1' } },
+      ];
+      const result = parseResult(
+        await handleSetFormConditional({ formId, componentId: 'a', hide: '' })
+      );
+      expect(result.conditional).toBeNull();
+      expect(form.schema.components[0].conditional).toBeUndefined();
+    });
+
+    test('clears conditional when hide is omitted', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'name', conditional: { hide: '=x > 1' } },
+      ];
+      const result = parseResult(await handleSetFormConditional({ formId, componentId: 'a' }));
+      expect(result.conditional).toBeNull();
+      expect(form.schema.components[0].conditional).toBeUndefined();
+    });
   });
 
   // ── set_form_layout ────────────────────────────────────────────────────
@@ -201,6 +223,43 @@ describe('property handlers', () => {
       );
       await expect(handleSetFormLayout({ formId, componentId: 'a', columns: 17 })).rejects.toThrow(
         'columns'
+      );
+    });
+
+    test('sets row identifier', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+      const result = parseResult(
+        await handleSetFormLayout({ formId, componentId: 'a', row: 'Row_1' })
+      );
+      expect(result.layout.row).toBe('Row_1');
+    });
+
+    test('sets both columns and row', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+      const result = parseResult(
+        await handleSetFormLayout({ formId, componentId: 'a', columns: 8, row: 'Row_1' })
+      );
+      expect(result.layout.columns).toBe(8);
+      expect(result.layout.row).toBe('Row_1');
+    });
+
+    test('clears row with empty string', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'name', layout: { columns: 8, row: 'Row_1' } },
+      ];
+      const result = parseResult(await handleSetFormLayout({ formId, componentId: 'a', row: '' }));
+      expect(result.layout.row).toBeUndefined();
+      expect(result.layout.columns).toBe(8);
+    });
+
+    test('rejects when neither columns nor row provided', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+      await expect(handleSetFormLayout({ formId, componentId: 'a' })).rejects.toThrow(
+        'At least one'
       );
     });
   });
@@ -257,6 +316,73 @@ describe('property handlers', () => {
           options: [{ label: '', value: 'a' }],
         })
       ).rejects.toThrow('label and value');
+    });
+
+    test('sets valuesExpression for dynamic options', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        {
+          type: 'select',
+          id: 'a',
+          key: 'sel',
+          values: [{ label: 'A', value: 'a' }],
+        },
+      ];
+      const result = parseResult(
+        await handleSetFormOptions({
+          formId,
+          componentId: 'a',
+          valuesExpression: '=availableItems',
+        })
+      );
+      expect(result.source).toBe('valuesExpression');
+      expect(result.valuesExpression).toBe('=availableItems');
+      expect(form.schema.components[0].valuesExpression).toBe('=availableItems');
+      expect(form.schema.components[0].values).toBeUndefined();
+    });
+
+    test('sets valuesKey for dynamic options from input data', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        {
+          type: 'radio',
+          id: 'a',
+          key: 'choice',
+          values: [{ label: 'X', value: 'x' }],
+        },
+      ];
+      const result = parseResult(
+        await handleSetFormOptions({
+          formId,
+          componentId: 'a',
+          valuesKey: 'dynamicOptions',
+        })
+      );
+      expect(result.source).toBe('valuesKey');
+      expect(result.valuesKey).toBe('dynamicOptions');
+      expect(form.schema.components[0].valuesKey).toBe('dynamicOptions');
+      expect(form.schema.components[0].values).toBeUndefined();
+    });
+
+    test('rejects multiple option sources at once', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'select', id: 'a', key: 'sel' }];
+      await expect(
+        handleSetFormOptions({
+          formId,
+          componentId: 'a',
+          options: [{ label: 'A', value: 'a' }],
+          valuesKey: 'items',
+        })
+      ).rejects.toThrow('Only one');
+    });
+
+    test('rejects when no option source provided', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'select', id: 'a', key: 'sel' }];
+      await expect(handleSetFormOptions({ formId, componentId: 'a' })).rejects.toThrow(
+        'Provide one of'
+      );
     });
   });
 });

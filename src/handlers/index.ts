@@ -7,6 +7,8 @@
 
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { type ToolResult } from '../types';
+import { getForm } from '../form-manager';
+import { pushSnapshot } from './core/form-history';
 
 // ── Core handlers ──────────────────────────────────────────────────────────
 import * as CreateForm from './core/create-form';
@@ -118,6 +120,31 @@ const dispatchMap = new Map<string, (args: any) => Promise<ToolResult>>(
   TOOL_REGISTRY.map((r) => [r.definition.name, r.handler])
 );
 
+/**
+ * Tools that should NOT auto-snapshot before dispatch.
+ * - Read-only tools: no mutation to undo.
+ * - create/import/clone: create new forms (no prior state to snapshot).
+ * - delete: destroys the form (history cleared separately).
+ * - form_history: manages its own undo/redo stacks.
+ * - batch_form_operations: manages its own snapshot for atomic rollback.
+ */
+const SNAPSHOT_SKIP = new Set([
+  'create_form',
+  'import_form_schema',
+  'clone_form',
+  'delete_form',
+  'export_form',
+  'list_forms',
+  'list_form_components',
+  'get_form_component_properties',
+  'validate_form',
+  'summarize_form',
+  'get_form_variables',
+  'diff_forms',
+  'form_history',
+  'batch_form_operations',
+]);
+
 /** Dispatch a tool call by name. */
 export async function dispatchToolCall(toolName: string, args: any): Promise<ToolResult> {
   const handler = dispatchMap.get(toolName);
@@ -125,6 +152,13 @@ export async function dispatchToolCall(toolName: string, args: any): Promise<Too
     throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${toolName}`);
   }
   try {
+    // Auto-push undo snapshot before mutating operations
+    if (!SNAPSHOT_SKIP.has(toolName) && args?.formId) {
+      const form = getForm(args.formId);
+      if (form) {
+        pushSnapshot(args.formId, form.schema);
+      }
+    }
     return await handler(args);
   } catch (error) {
     if (error instanceof McpError) throw error;

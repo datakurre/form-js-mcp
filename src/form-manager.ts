@@ -62,7 +62,7 @@ export function clearForms(): void {
 // ── Schema helpers ─────────────────────────────────────────────────────────
 
 /** Create a fresh empty form schema. */
-export function createEmptySchema(name?: string): FormSchema {
+export function createEmptySchema(_name?: string): FormSchema {
   const id = `Form_${randomBytes(4).toString('hex')}`;
   return {
     type: 'default',
@@ -70,6 +70,5 @@ export function createEmptySchema(name?: string): FormSchema {
     schemaVersion: DEFAULT_SCHEMA_VERSION,
     exporter: { ...EXPORTER },
     components: [],
-    ...(name ? {} : {}),
   };
 }

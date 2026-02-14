@@ -8,8 +8,9 @@ import { validateArgs, requireForm, jsonResult, countComponents } from '../helpe
 export const TOOL_DEFINITION = {
   name: 'form_history',
   description:
-    'Undo or redo changes to a form schema. Each mutation is automatically ' +
-    'tracked. Use action "undo" to revert to the previous state or "redo" to re-apply.',
+    'Undo or redo changes to a form schema. Mutations dispatched through the ' +
+    'tool system are automatically tracked. Use action "undo" to revert to the ' +
+    'previous state or "redo" to re-apply.',
   inputSchema: {
     type: 'object',
     properties: {

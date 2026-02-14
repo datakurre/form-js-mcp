@@ -23,17 +23,30 @@ export const TOOL_DEFINITION = {
       componentId: { type: 'string', description: 'Component ID' },
       hide: {
         type: 'string',
-        description: 'FEEL expression: when true, the component is hidden',
+        description:
+          'FEEL expression: when true, the component is hidden. ' +
+          'Pass empty string or null to clear the conditional.',
       },
     },
-    required: ['formId', 'componentId', 'hide'],
+    required: ['formId', 'componentId'],
   },
 } as const;
 
 export async function handleSetFormConditional(args: any): Promise<ToolResult> {
-  validateArgs(args, ['formId', 'componentId', 'hide']);
+  validateArgs(args, ['formId', 'componentId']);
   const form = requireForm(args.formId);
   const comp = requireComponent(form, args.componentId);
+
+  // Clear conditional when hide is empty, null, or not provided
+  if (!args.hide) {
+    delete comp.conditional;
+    bumpVersion(form, args.formId);
+    return mutationResult(form, {
+      componentId: args.componentId,
+      conditional: null,
+      message: `Cleared conditional on "${args.componentId}"`,
+    });
+  }
 
   const conditional: FormConditional = { hide: args.hide };
   comp.conditional = conditional;

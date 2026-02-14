@@ -5,6 +5,7 @@
 import { type ToolResult } from '../../types';
 import { deleteForm as removeForm } from '../../form-manager';
 import { validateArgs, requireForm, jsonResult } from '../helpers';
+import { clearHistory } from './form-history';
 
 export const TOOL_DEFINITION = {
   name: 'delete_form',
@@ -26,6 +27,7 @@ export async function handleDeleteForm(args: any): Promise<ToolResult> {
   // Verify it exists first
   requireForm(args.formId);
   removeForm(args.formId);
+  clearHistory(args.formId);
 
   return jsonResult({
     deleted: args.formId,

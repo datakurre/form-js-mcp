@@ -11,6 +11,7 @@ import {
   isSupportedType,
   mutationResult,
   bumpVersion,
+  collectAllKeys,
 } from '../helpers';
 
 export const TOOL_DEFINITION = {
@@ -129,8 +130,18 @@ export async function handleReplaceFormComponent(args: any): Promise<ToolResult>
   // Set the new type
   comp.type = newType;
 
-  // If the new type is keyed but the component has no key, we need to note that
-  // (the validator will catch it via hints)
+  // If the new type is keyed but the component has no key, auto-generate one
+  if (isKeyed(newType) && !comp.key) {
+    const baseKey = (comp.label ?? newType).replaceAll(/[^\w]/g, '').toLowerCase() || newType;
+    const existingKeys = new Set(collectAllKeys(form.schema.components));
+    let candidateKey = baseKey;
+    let counter = 1;
+    while (existingKeys.has(candidateKey)) {
+      candidateKey = `${baseKey}${counter++}`;
+    }
+    comp.key = candidateKey;
+    preserved.push('key (auto-generated)');
+  }
 
   bumpVersion(form, args.formId);
 

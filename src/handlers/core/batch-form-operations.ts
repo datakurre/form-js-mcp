@@ -3,7 +3,7 @@
  */
 
 import { type ToolResult, type FormSchema } from '../../types';
-import { getForm } from '../../form-manager';
+import { getForm, notifyFormChanged } from '../../form-manager';
 import { validateArgs, requireForm, jsonResult } from '../helpers';
 
 export const TOOL_DEFINITION = {
@@ -56,6 +56,7 @@ export async function handleBatchFormOperations(args: any): Promise<ToolResult> 
       // Rollback
       form.schema = snapshot;
       form.version = snapshotVersion;
+      notifyFormChanged(args.formId);
       return jsonResult({
         success: false,
         completedOperations: results.length,
@@ -69,6 +70,7 @@ export async function handleBatchFormOperations(args: any): Promise<ToolResult> 
     if (op.tool === 'batch_form_operations') {
       form.schema = snapshot;
       form.version = snapshotVersion;
+      notifyFormChanged(args.formId);
       return jsonResult({
         success: false,
         completedOperations: results.length,
@@ -88,6 +90,7 @@ export async function handleBatchFormOperations(args: any): Promise<ToolResult> 
       if (currentForm) {
         currentForm.schema = snapshot;
         currentForm.version = snapshotVersion;
+        notifyFormChanged(args.formId);
       }
 
       results.push({
