@@ -3,7 +3,13 @@
  */
 
 import { type ToolResult, type FormConditional } from '../../types';
-import { validateArgs, requireForm, requireComponent, jsonResult, bumpVersion } from '../helpers';
+import {
+  validateArgs,
+  requireForm,
+  requireComponent,
+  mutationResult,
+  bumpVersion,
+} from '../helpers';
 
 export const TOOL_DEFINITION = {
   name: 'set_form_conditional',
@@ -33,7 +39,7 @@ export async function handleSetFormConditional(args: any): Promise<ToolResult> {
   comp.conditional = conditional;
   bumpVersion(form);
 
-  return jsonResult({
+  return mutationResult(form, {
     componentId: args.componentId,
     conditional,
     message: `Set conditional on "${args.componentId}": hide = ${args.hide}`,

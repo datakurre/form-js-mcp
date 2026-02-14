@@ -3,7 +3,13 @@
  */
 
 import { type ToolResult } from '../../types';
-import { validateArgs, requireForm, requireComponent, jsonResult, bumpVersion } from '../helpers';
+import {
+  validateArgs,
+  requireForm,
+  requireComponent,
+  mutationResult,
+  bumpVersion,
+} from '../helpers';
 
 export const TOOL_DEFINITION = {
   name: 'set_form_component_properties',
@@ -50,7 +56,7 @@ export async function handleSetFormComponentProperties(args: any): Promise<ToolR
 
   bumpVersion(form);
 
-  return jsonResult({
+  return mutationResult(form, {
     componentId: args.componentId,
     updated,
     removed,

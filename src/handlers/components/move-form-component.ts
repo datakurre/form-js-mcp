@@ -10,7 +10,7 @@ import {
   requireComponent,
   findComponentById,
   findParentComponents,
-  jsonResult,
+  mutationResult,
   bumpVersion,
 } from '../helpers';
 
@@ -67,7 +67,7 @@ export async function handleMoveFormComponent(args: any): Promise<ToolResult> {
 
   bumpVersion(form);
 
-  return jsonResult({
+  return mutationResult(form, {
     moved: args.componentId,
     targetParent: args.targetParentId ?? 'root',
     position: pos ?? targetArr.length - 1,

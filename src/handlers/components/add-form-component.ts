@@ -7,7 +7,7 @@ import { CONTAINER_FIELD_TYPES } from '../../constants';
 import {
   validateArgs,
   requireForm,
-  jsonResult,
+  mutationResult,
   bumpVersion,
   generateComponentId,
   isKeyedType,
@@ -94,7 +94,7 @@ export async function handleAddFormComponent(args: any): Promise<ToolResult> {
 
   bumpVersion(form);
 
-  return jsonResult({
+  return mutationResult(form, {
     component,
     totalComponents: countComponents(form.schema.components),
     message: `Added ${type} component "${id}"`,

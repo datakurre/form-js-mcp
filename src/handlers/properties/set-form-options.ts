@@ -4,7 +4,13 @@
 
 import { type ToolResult, type FormOptionValue } from '../../types';
 import { OPTIONS_FIELD_TYPES } from '../../constants';
-import { validateArgs, requireForm, requireComponent, jsonResult, bumpVersion } from '../helpers';
+import {
+  validateArgs,
+  requireForm,
+  requireComponent,
+  mutationResult,
+  bumpVersion,
+} from '../helpers';
 
 export const TOOL_DEFINITION = {
   name: 'set_form_options',
@@ -58,7 +64,7 @@ export async function handleSetFormOptions(args: any): Promise<ToolResult> {
   comp.valuesExpression = undefined; // Remove dynamic expression if present
   bumpVersion(form);
 
-  return jsonResult({
+  return mutationResult(form, {
     componentId: args.componentId,
     values: comp.values,
     count: options.length,

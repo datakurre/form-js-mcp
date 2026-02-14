@@ -5,8 +5,9 @@
 import { randomBytes } from 'node:crypto';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { getForm } from '../form-manager';
-import { type FormState, type FormComponent, type ToolResult } from '../types';
+import { type FormState, type FormComponent, type ToolResult, type HintLevel } from '../types';
 import { KEYED_FIELD_TYPES, SUPPORTED_FIELD_TYPES } from '../constants';
+import { validateFormSchema, type ValidationIssue } from '../validator';
 
 // ── Argument validation ────────────────────────────────────────────────────
 
@@ -166,4 +167,34 @@ export function countComponents(components: FormComponent[]): number {
     if (comp.components) count += countComponents(comp.components);
   }
   return count;
+}
+
+// ── Implicit validation hints (P4.5) ───────────────────────────────────────
+
+/**
+ * Collect validation hints for a form based on its `hintLevel` setting.
+ *
+ * - `'full'`    — return all issues (errors + warnings)
+ * - `'minimal'` — return errors only
+ * - `'none'`    — return empty array
+ */
+export function collectValidationHints(form: FormState): ValidationIssue[] {
+  const level: HintLevel = form.hintLevel ?? 'full';
+  if (level === 'none') return [];
+
+  const { issues } = validateFormSchema(form.schema);
+  if (level === 'minimal') return issues.filter((i) => i.severity === 'error');
+  return issues;
+}
+
+/**
+ * Create a JSON ToolResult for a mutation, automatically appending
+ * validation hints based on the form's `hintLevel`.
+ */
+export function mutationResult(form: FormState, data: Record<string, any>): ToolResult {
+  const hints = collectValidationHints(form);
+  if (hints.length > 0) {
+    data._hints = hints;
+  }
+  return jsonResult(data);
 }

@@ -166,4 +166,49 @@ describe('component handlers', () => {
       expect(result.count).toBe(1);
     });
   });
+
+  // ── Implicit validation hints (P4.5) ───────────────────────────────────
+
+  describe('implicit validation hints', () => {
+    test('mutating handler returns _hints when hintLevel is full', async () => {
+      const { formId, form } = createForm();
+      form.hintLevel = 'full';
+      // Add a keyed field without a key — will produce a validation error
+      form.schema.components = [{ type: 'textfield', id: 'nokey' }];
+      const result = parseResult(await handleAddFormComponent({ formId, type: 'text' }));
+      expect(result._hints).toBeDefined();
+      expect(result._hints.length).toBeGreaterThan(0);
+      expect(result._hints.some((h: any) => h.severity === 'error')).toBe(true);
+    });
+
+    test('mutating handler omits _hints when hintLevel is none', async () => {
+      const { formId, form } = createForm();
+      form.hintLevel = 'none';
+      form.schema.components = [{ type: 'textfield', id: 'nokey' }];
+      const result = parseResult(await handleAddFormComponent({ formId, type: 'text' }));
+      expect(result._hints).toBeUndefined();
+    });
+
+    test('mutating handler returns only errors when hintLevel is minimal', async () => {
+      const { formId, form } = createForm();
+      form.hintLevel = 'minimal';
+      // Add an unknown type (produces warning) and a missing key (produces error)
+      form.schema.components = [{ type: 'textfield', id: 'nokey' }];
+      const result = parseResult(await handleAddFormComponent({ formId, type: 'text' }));
+      expect(result._hints).toBeDefined();
+      // Should only have errors, no warnings
+      for (const hint of result._hints) {
+        expect(hint.severity).toBe('error');
+      }
+    });
+
+    test('no _hints when form is valid', async () => {
+      const { formId, form } = createForm();
+      form.hintLevel = 'full';
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name', label: 'Name' }];
+      const result = parseResult(await handleDeleteFormComponent({ formId, componentId: 'a' }));
+      // After deleting the only component, form is valid (empty)
+      expect(result._hints).toBeUndefined();
+    });
+  });
 });

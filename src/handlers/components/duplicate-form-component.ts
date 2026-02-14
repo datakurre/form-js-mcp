@@ -10,7 +10,7 @@ import {
   requireComponent,
   findParentComponents,
   collectAllKeys,
-  jsonResult,
+  mutationResult,
   bumpVersion,
 } from '../helpers';
 
@@ -62,7 +62,7 @@ export async function handleDuplicateFormComponent(args: any): Promise<ToolResul
   parentArr.splice(idx + 1, 0, clone);
   bumpVersion(form);
 
-  return jsonResult({
+  return mutationResult(form, {
     component: clone,
     message: `Duplicated "${args.componentId}" as "${clone.id}"`,
   });

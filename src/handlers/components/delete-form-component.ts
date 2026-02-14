@@ -8,7 +8,7 @@ import {
   requireForm,
   requireComponent,
   findParentComponents,
-  jsonResult,
+  mutationResult,
   bumpVersion,
 } from '../helpers';
 
@@ -40,7 +40,7 @@ export async function handleDeleteFormComponent(args: any): Promise<ToolResult> 
 
   bumpVersion(form);
 
-  return jsonResult({
+  return mutationResult(form, {
     deleted: args.componentId,
     type: comp.type,
     message: `Deleted ${comp.type} component "${args.componentId}"`,

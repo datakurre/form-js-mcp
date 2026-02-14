@@ -3,7 +3,13 @@
  */
 
 import { type ToolResult, type FormValidation } from '../../types';
-import { validateArgs, requireForm, requireComponent, jsonResult, bumpVersion } from '../helpers';
+import {
+  validateArgs,
+  requireForm,
+  requireComponent,
+  mutationResult,
+  bumpVersion,
+} from '../helpers';
 
 export const TOOL_DEFINITION = {
   name: 'set_form_validation',
@@ -67,7 +73,7 @@ export async function handleSetFormValidation(args: any): Promise<ToolResult> {
   comp.validate = validate;
   bumpVersion(form);
 
-  return jsonResult({
+  return mutationResult(form, {
     componentId: args.componentId,
     validate: comp.validate,
     rules,

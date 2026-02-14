@@ -30,6 +30,8 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { type ToolModule } from './module';
 import { formModule } from './form-module';
+import { RESOURCE_TEMPLATES, listResources, readResource } from './resources';
+import { listPrompts, getPrompt } from './prompts';
 
 // ── CLI argument parsing ───────────────────────────────────────────────────
 
@@ -120,25 +122,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any): Promise<an
 // ── Resource handlers ──────────────────────────────────────────────────────
 
 server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-  resources: [],
+  resources: listResources(),
 }));
 
 server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => ({
-  resourceTemplates: [],
+  resourceTemplates: [...RESOURCE_TEMPLATES],
 }));
 
-server.setRequestHandler(ReadResourceRequestSchema, async (_request: any) => {
-  throw new McpError(ErrorCode.InvalidRequest, 'Resource not found');
+server.setRequestHandler(ReadResourceRequestSchema, async (request: any) => {
+  const { uri } = request.params;
+  const content = readResource(uri);
+  return {
+    contents: [content],
+  };
 });
 
 // ── Prompt handlers ────────────────────────────────────────────────────────
 
 server.setRequestHandler(ListPromptsRequestSchema, async () => ({
-  prompts: [],
+  prompts: [...listPrompts()],
 }));
 
-server.setRequestHandler(GetPromptRequestSchema, async (_request: any) => {
-  throw new McpError(ErrorCode.InvalidRequest, 'Prompt not found');
+server.setRequestHandler(GetPromptRequestSchema, async (request: any): Promise<any> => {
+  const { name, arguments: args } = request.params;
+  return getPrompt(name, args ?? {});
 });
 
 async function main() {

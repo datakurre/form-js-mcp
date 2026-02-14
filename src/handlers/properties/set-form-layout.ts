@@ -4,7 +4,13 @@
 
 import { type ToolResult, type FormLayout } from '../../types';
 import { DEFAULT_COLUMNS } from '../../constants';
-import { validateArgs, requireForm, requireComponent, jsonResult, bumpVersion } from '../helpers';
+import {
+  validateArgs,
+  requireForm,
+  requireComponent,
+  mutationResult,
+  bumpVersion,
+} from '../helpers';
 
 export const TOOL_DEFINITION = {
   name: 'set_form_layout',
@@ -41,7 +47,7 @@ export async function handleSetFormLayout(args: any): Promise<ToolResult> {
   comp.layout = layout;
   bumpVersion(form);
 
-  return jsonResult({
+  return mutationResult(form, {
     componentId: args.componentId,
     layout: comp.layout,
     message: `Set layout on "${args.componentId}": columns = ${columns}`,
