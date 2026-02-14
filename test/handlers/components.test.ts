@@ -67,6 +67,48 @@ describe('component handlers', () => {
       const result = parseResult(await handleAddFormComponent({ formId, type: 'text' }));
       expect(result.component.key).toBeUndefined();
     });
+
+    test('uses explicit key when provided', async () => {
+      const { formId } = createForm();
+      const result = parseResult(
+        await handleAddFormComponent({ formId, type: 'textfield', key: 'myCustomKey' })
+      );
+      expect(result.component.key).toBe('myCustomKey');
+    });
+
+    test('rejects non-container parentId', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'textfield', id: 'tf1', key: 'name' }];
+      await expect(
+        handleAddFormComponent({ formId, type: 'text', parentId: 'tf1' })
+      ).rejects.toThrow('not a container');
+    });
+
+    test('rejects unknown parentId', async () => {
+      const { formId } = createForm();
+      await expect(
+        handleAddFormComponent({ formId, type: 'text', parentId: 'nope' })
+      ).rejects.toThrow('not found');
+    });
+
+    test('passes additional properties to component', async () => {
+      const { formId } = createForm();
+      const result = parseResult(
+        await handleAddFormComponent({
+          formId,
+          type: 'textfield',
+          label: 'Email',
+          properties: { description: 'Enter your email' },
+        })
+      );
+      expect(result.component.description).toBe('Enter your email');
+    });
+
+    test('auto-generates key without label', async () => {
+      const { formId } = createForm();
+      const result = parseResult(await handleAddFormComponent({ formId, type: 'textfield' }));
+      expect(result.component.key).toBeTruthy();
+    });
   });
 
   // ── delete_form_component ──────────────────────────────────────────────
@@ -115,6 +157,28 @@ describe('component handlers', () => {
       expect(form.schema.components).toHaveLength(1);
       expect(form.schema.components[0].components).toHaveLength(1);
     });
+
+    test('rejects non-container target', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'first' },
+        { type: 'textfield', id: 'b', key: 'second' },
+      ];
+      await expect(
+        handleMoveFormComponent({ formId, componentId: 'a', targetParentId: 'b' })
+      ).rejects.toThrow('not a container');
+    });
+
+    test('appends when position not specified', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'group', id: 'g1', components: [{ type: 'text', id: 'existing' }] },
+        { type: 'textfield', id: 'a', key: 'field' },
+      ];
+      await handleMoveFormComponent({ formId, componentId: 'a', targetParentId: 'g1' });
+      expect(form.schema.components[0].components).toHaveLength(2);
+      expect(form.schema.components[0].components![1].id).toBe('a');
+    });
   });
 
   // ── duplicate_form_component ───────────────────────────────────────────
@@ -127,6 +191,31 @@ describe('component handlers', () => {
       expect(result.component.id).not.toBe('a');
       expect(result.component.key).not.toBe('name');
       expect(form.schema.components).toHaveLength(2);
+    });
+
+    test('duplicates nested components', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        {
+          type: 'group',
+          id: 'g1',
+          components: [{ type: 'textfield', id: 'inner', key: 'field' }],
+        },
+      ];
+      const result = parseResult(await handleDuplicateFormComponent({ formId, componentId: 'g1' }));
+      expect(result.component.id).not.toBe('g1');
+      expect(result.component.components).toHaveLength(1);
+      expect(result.component.components[0].id).not.toBe('inner');
+      expect(result.component.components[0].key).not.toBe('field');
+      expect(form.schema.components).toHaveLength(2);
+    });
+
+    test('duplicates component without key', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'text', id: 't1' }];
+      const result = parseResult(await handleDuplicateFormComponent({ formId, componentId: 't1' }));
+      expect(result.component.id).not.toBe('t1');
+      expect(result.component.key).toBeUndefined();
     });
   });
 

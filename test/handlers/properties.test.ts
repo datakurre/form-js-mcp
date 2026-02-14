@@ -114,6 +114,54 @@ describe('property handlers', () => {
       expect(result.validate.maxLength).toBe(100);
       expect(result.rules).toHaveLength(3);
     });
+
+    test('sets numeric validation rules (min, max)', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'number', id: 'a', key: 'age' }];
+      const result = parseResult(
+        await handleSetFormValidation({
+          formId,
+          componentId: 'a',
+          min: 0,
+          max: 150,
+        })
+      );
+      expect(result.validate.min).toBe(0);
+      expect(result.validate.max).toBe(150);
+      expect(result.rules).toHaveLength(2);
+    });
+
+    test('sets pattern and validationError', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'email' }];
+      const result = parseResult(
+        await handleSetFormValidation({
+          formId,
+          componentId: 'a',
+          pattern: '^[^@]+@[^@]+$',
+          validationError: 'Please enter a valid email',
+        })
+      );
+      expect(result.validate.pattern).toBe('^[^@]+@[^@]+$');
+      expect(result.validate.validationError).toBe('Please enter a valid email');
+      expect(result.rules).toHaveLength(2);
+    });
+
+    test('merges with existing validation', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'name', validate: { required: true } },
+      ];
+      const result = parseResult(
+        await handleSetFormValidation({
+          formId,
+          componentId: 'a',
+          minLength: 3,
+        })
+      );
+      expect(result.validate.required).toBe(true);
+      expect(result.validate.minLength).toBe(3);
+    });
   });
 
   // ── set_form_conditional ───────────────────────────────────────────────
@@ -183,6 +231,32 @@ describe('property handlers', () => {
           options: [{ label: 'A', value: 'a' }],
         })
       ).rejects.toThrow('does not support options');
+    });
+
+    test('clears valuesExpression when setting static options', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'select', id: 'a', key: 'sel', valuesExpression: '=items' },
+      ];
+      await handleSetFormOptions({
+        formId,
+        componentId: 'a',
+        options: [{ label: 'A', value: 'a' }],
+      });
+      expect(form.schema.components[0].valuesExpression).toBeUndefined();
+      expect(form.schema.components[0].values).toHaveLength(1);
+    });
+
+    test('rejects option missing label', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [{ type: 'select', id: 'a', key: 'sel' }];
+      await expect(
+        handleSetFormOptions({
+          formId,
+          componentId: 'a',
+          options: [{ label: '', value: 'a' }],
+        })
+      ).rejects.toThrow('label and value');
     });
   });
 });

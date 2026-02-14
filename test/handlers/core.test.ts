@@ -16,6 +16,8 @@ import {
   handleFormHistory,
   pushSnapshot,
   clearAllHistory,
+  clearHistory,
+  getHistorySize,
 } from '../../src/handlers/core/form-history';
 
 describe('core handlers', () => {
@@ -190,6 +192,20 @@ describe('core handlers', () => {
       expect(result.valid).toBe(false);
       expect(result.issues.some((i: any) => i.message.includes('missing "key"'))).toBe(true);
     });
+
+    test('excludes warnings when includeWarnings=false', async () => {
+      const { formId, form } = createForm();
+      // Unknown type produces warning, missing key produces error
+      form.schema.components = [
+        { type: 'textfield', id: 'a' },
+        { type: 'fancywidget', id: 'b' },
+      ];
+      const result = parseResult(await handleValidateForm({ formId, includeWarnings: false }));
+      // Should only have errors, no warnings
+      for (const issue of result.issues) {
+        expect(issue.severity).toBe('error');
+      }
+    });
   });
 
   // ── summarize_form ─────────────────────────────────────────────────────
@@ -208,6 +224,54 @@ describe('core handlers', () => {
       expect(result.componentsByType.number).toBe(1);
       expect(result.variableCount).toBe(2);
     });
+
+    test('summarizes nested components with validation and conditionals', async () => {
+      const { formId, form } = createForm('Nested');
+      form.schema.components = [
+        {
+          type: 'group',
+          id: 'g1',
+          components: [
+            {
+              type: 'textfield',
+              id: 'a',
+              key: 'name',
+              label: 'Name',
+              validate: { required: true },
+              layout: { row: 'row1' },
+            },
+            {
+              type: 'number',
+              id: 'b',
+              key: 'age',
+              label: 'Age',
+              conditional: { hide: '=age < 0' },
+              layout: { row: 'row1' },
+            },
+          ],
+        },
+        { type: 'separator', id: 's1' },
+      ];
+      const result = parseResult(await handleSummarizeForm({ formId }));
+      expect(result.totalComponents).toBe(4);
+      expect(result.nestingDepth).toBeGreaterThanOrEqual(1);
+      expect(result.variableCount).toBe(2);
+      expect(result.layoutRows).toBeGreaterThanOrEqual(1);
+      expect(result.hasValidation).toBe(true);
+      expect(result.hasConditionals).toBe(true);
+      expect(result.schemaVersion).toBeDefined();
+    });
+
+    test('summarizes empty form', async () => {
+      const { formId } = createForm('Empty');
+      const result = parseResult(await handleSummarizeForm({ formId }));
+      expect(result.totalComponents).toBe(0);
+      expect(result.variableCount).toBe(0);
+      expect(result.hasValidation).toBe(false);
+      expect(result.hasConditionals).toBe(false);
+      expect(result.nestingDepth).toBe(0);
+      expect(result.layoutRows).toBe(0);
+    });
   });
 
   // ── get_form_variables ─────────────────────────────────────────────────
@@ -224,6 +288,53 @@ describe('core handlers', () => {
       expect(result.inputKeys).toContain('name');
       expect(result.inputKeys).toContain('age');
       expect(result.total).toBe(2);
+    });
+
+    test('detects expression fields', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'select', id: 'a', key: 'color', valuesExpression: '=colors' },
+      ];
+      const result = parseResult(await handleGetFormVariables({ formId }));
+      expect(result.expressionFieldCount).toBe(1);
+    });
+
+    test('detects conditional fields', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'name', conditional: { hide: '=x = true' } },
+      ];
+      const result = parseResult(await handleGetFormVariables({ formId }));
+      expect(result.conditionalFieldCount).toBe(1);
+    });
+
+    test('handles nested components', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        {
+          type: 'group',
+          id: 'g1',
+          components: [
+            { type: 'textfield', id: 'inner', key: 'innerKey' },
+            { type: 'select', id: 's1', key: 'sel', valuesExpression: '=opts' },
+          ],
+        },
+      ];
+      const result = parseResult(await handleGetFormVariables({ formId }));
+      expect(result.inputKeys).toContain('innerKey');
+      expect(result.inputKeys).toContain('sel');
+      expect(result.expressionFieldCount).toBe(1);
+      expect(result.total).toBe(2);
+    });
+
+    test('deduplicates keys', async () => {
+      const { formId, form } = createForm();
+      form.schema.components = [
+        { type: 'textfield', id: 'a', key: 'name' },
+        { type: 'textfield', id: 'b', key: 'name' },
+      ];
+      const result = parseResult(await handleGetFormVariables({ formId }));
+      expect(result.total).toBe(1);
     });
   });
 
@@ -491,6 +602,34 @@ describe('core handlers', () => {
       await expect(handleFormHistory({ formId, action: 'rewind' })).rejects.toThrow(
         'Invalid action'
       );
+    });
+
+    test('clearHistory removes history for a form', () => {
+      const { formId, form } = createForm();
+      pushSnapshot(formId, form.schema);
+      expect(getHistorySize(formId).undoCount).toBe(1);
+      clearHistory(formId);
+      expect(getHistorySize(formId).undoCount).toBe(0);
+    });
+
+    test('getHistorySize returns zero for unknown form', () => {
+      const size = getHistorySize('nonexistent');
+      expect(size.undoCount).toBe(0);
+      expect(size.redoCount).toBe(0);
+    });
+
+    test('pushSnapshot clears redo stack', async () => {
+      const { formId, form } = createForm();
+      pushSnapshot(formId, form.schema);
+      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
+
+      // Undo to create redo entry
+      await handleFormHistory({ formId, action: 'undo' });
+      expect(getHistorySize(formId).redoCount).toBe(1);
+
+      // New snapshot should clear redo stack
+      pushSnapshot(formId, form.schema);
+      expect(getHistorySize(formId).redoCount).toBe(0);
     });
   });
 });
