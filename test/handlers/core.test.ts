@@ -1,11 +1,9 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { clearForms, createForm, parseResult } from '../helpers';
 import { handleCreateForm } from '../../src/handlers/core/create-form';
-import { handleImportFormSchema } from '../../src/handlers/core/import-form-schema';
-import { handleExportForm } from '../../src/handlers/core/export-form';
 import { handleDeleteForm } from '../../src/handlers/core/delete-form';
 import { handleInspectForm } from '../../src/handlers/core/inspect-form';
-import { handleAutoLayoutForm } from '../../src/handlers/core/auto-layout-form';
+import { handleModifyFormComponent } from '../../src/handlers/components/modify-form-component';
 import { handleBatchFormOperations } from '../../src/handlers/core/batch-form-operations';
 import {
   handleFormHistory,
@@ -45,15 +43,15 @@ describe('core handlers', () => {
     });
   });
 
-  // ── import_form_schema ─────────────────────────────────────────────────
+  // ── import_form_schema (via create_form with schema) ─────────────────
 
-  describe('import_form_schema', () => {
+  describe('import_form_schema (via create_form)', () => {
     test('imports a schema from JSON object', async () => {
       const schema = {
         type: 'default',
         components: [{ type: 'textfield', id: 'f1', key: 'name', label: 'Name' }],
       };
-      const result = parseResult(await handleImportFormSchema({ schema }));
+      const result = parseResult(await handleCreateForm({ schema }));
       expect(result.formId).toMatch(/^form_/);
       expect(result.componentCount).toBe(1);
     });
@@ -63,48 +61,46 @@ describe('core handlers', () => {
         type: 'default',
         components: [{ type: 'textfield', id: 'f1', key: 'name', label: 'Name' }],
       });
-      const result = parseResult(await handleImportFormSchema({ schema }));
+      const result = parseResult(await handleCreateForm({ schema }));
       expect(result.componentCount).toBe(1);
     });
 
     test('rejects invalid schema', async () => {
-      await expect(handleImportFormSchema({ schema: 'not json' })).rejects.toThrow();
+      await expect(handleCreateForm({ schema: 'not json' })).rejects.toThrow();
     });
 
     test('rejects schema without components', async () => {
-      await expect(handleImportFormSchema({ schema: { type: 'default' } })).rejects.toThrow(
-        'components'
-      );
+      await expect(handleCreateForm({ schema: { type: 'default' } })).rejects.toThrow('components');
     });
   });
 
-  // ── export_form ────────────────────────────────────────────────────────
+  // ── export_form (via inspect_form with schema facet) ────────────────
 
-  describe('export_form', () => {
+  describe('export_form (via inspect_form)', () => {
     test('exports form as JSON', async () => {
       const { formId } = createForm('Test');
-      const result = await handleExportForm({ formId });
-      const json = JSON.parse(result.content[0].text);
+      const result = parseResult(await handleInspectForm({ formId, include: ['schema'] }));
+      const json = JSON.parse(result.schema);
       expect(json.type).toBe('default');
       expect(json.components).toEqual([]);
-    });
-
-    test('rejects unknown form', async () => {
-      await expect(handleExportForm({ formId: 'nonexistent' })).rejects.toThrow('not found');
     });
 
     test('blocks export when form has validation errors', async () => {
       const { formId, form } = createForm('Invalid');
       // Add a keyed type without a key — produces a validation error
       form.schema.components = [{ type: 'textfield', id: 'nokey' }];
-      await expect(handleExportForm({ formId })).rejects.toThrow('Export blocked');
+      await expect(handleInspectForm({ formId, include: ['schema'] })).rejects.toThrow(
+        'Export blocked'
+      );
     });
 
     test('allows export with skipValidation=true despite errors', async () => {
       const { formId, form } = createForm('Invalid');
       form.schema.components = [{ type: 'textfield', id: 'nokey' }];
-      const result = await handleExportForm({ formId, skipValidation: true });
-      const json = JSON.parse(result.content[0].text);
+      const result = parseResult(
+        await handleInspectForm({ formId, include: ['schema'], skipValidation: true })
+      );
+      const json = JSON.parse(result.schema);
       expect(json.components).toHaveLength(1);
     });
   });
@@ -458,16 +454,18 @@ describe('core handlers', () => {
     });
   });
 
-  // ── auto_layout_form ───────────────────────────────────────────────────
+  // ── auto_layout_form (via modify_form_component) ───────────────────────
 
-  describe('auto_layout_form', () => {
+  describe('auto_layout_form (via modify_form_component)', () => {
     test('single column layout', async () => {
       const { formId, form } = createForm();
       form.schema.components = [
         { type: 'textfield', id: 'a', key: 'name' },
         { type: 'number', id: 'b', key: 'age' },
       ];
-      const result = parseResult(await handleAutoLayoutForm({ formId }));
+      const result = parseResult(
+        await handleModifyFormComponent({ formId, action: 'auto-layout' })
+      );
       expect(result.strategy).toBe('single-column');
       expect(result.componentsLaidOut).toBe(2);
       expect(form.schema.components[0].layout?.columns).toBe(16);
@@ -480,7 +478,9 @@ describe('core handlers', () => {
         { type: 'textfield', id: 'a', key: 'first' },
         { type: 'textfield', id: 'b', key: 'last' },
       ];
-      const result = parseResult(await handleAutoLayoutForm({ formId, strategy: 'two-column' }));
+      const result = parseResult(
+        await handleModifyFormComponent({ formId, action: 'auto-layout', strategy: 'two-column' })
+      );
       expect(result.strategy).toBe('two-column');
       expect(result.componentsLaidOut).toBe(2);
       expect(form.schema.components[0].layout?.row).toBeDefined();
@@ -494,7 +494,9 @@ describe('core handlers', () => {
         { type: 'checkbox', id: 'b', key: 'agree' },
         { type: 'separator', id: 'c' },
       ];
-      const result = parseResult(await handleAutoLayoutForm({ formId, strategy: 'compact' }));
+      const result = parseResult(
+        await handleModifyFormComponent({ formId, action: 'auto-layout', strategy: 'compact' })
+      );
       expect(result.strategy).toBe('compact');
       expect(result.componentsLaidOut).toBeGreaterThanOrEqual(3);
       // Separator is full-width
@@ -508,7 +510,9 @@ describe('core handlers', () => {
         { type: 'separator', id: 's' },
         { type: 'textfield', id: 'b', key: 'last' },
       ];
-      const result = parseResult(await handleAutoLayoutForm({ formId, strategy: 'two-column' }));
+      const result = parseResult(
+        await handleModifyFormComponent({ formId, action: 'auto-layout', strategy: 'two-column' })
+      );
       expect(result.componentsLaidOut).toBe(3);
       // Separator should be full width
       expect(form.schema.components[1].layout?.columns).toBe(16);
@@ -516,9 +520,9 @@ describe('core handlers', () => {
 
     test('rejects invalid strategy', async () => {
       const { formId } = createForm();
-      await expect(handleAutoLayoutForm({ formId, strategy: 'invalid' })).rejects.toThrow(
-        'Invalid strategy'
-      );
+      await expect(
+        handleModifyFormComponent({ formId, action: 'auto-layout', strategy: 'invalid' })
+      ).rejects.toThrow('Invalid strategy');
     });
   });
 

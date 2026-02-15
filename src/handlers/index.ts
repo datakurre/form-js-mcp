@@ -12,18 +12,14 @@ import { pushSnapshot } from './core/form-history';
 
 // ── Core handlers ──────────────────────────────────────────────────────────
 import * as CreateForm from './core/create-form';
-import * as ImportFormSchema from './core/import-form-schema';
-import * as ExportForm from './core/export-form';
 import * as DeleteForm from './core/delete-form';
 import * as InspectForm from './core/inspect-form';
-import * as AutoLayoutForm from './core/auto-layout-form';
 import * as BatchFormOperations from './core/batch-form-operations';
 import * as FormHistory from './core/form-history';
 
 // ── Component handlers ─────────────────────────────────────────────────────
 import * as AddFormComponent from './components/add-form-component';
 import * as ModifyFormComponent from './components/modify-form-component';
-import * as ListFormComponents from './components/list-form-components';
 
 // ── Property handlers ──────────────────────────────────────────────────────
 import * as SetProps from './properties/set-form-component-properties';
@@ -40,14 +36,8 @@ interface ToolRegistration {
 export const TOOL_REGISTRY: readonly ToolRegistration[] = [
   // Core form lifecycle
   { definition: CreateForm.TOOL_DEFINITION, handler: CreateForm.handleCreateForm },
-  {
-    definition: ImportFormSchema.TOOL_DEFINITION,
-    handler: ImportFormSchema.handleImportFormSchema,
-  },
-  { definition: ExportForm.TOOL_DEFINITION, handler: ExportForm.handleExportForm },
   { definition: DeleteForm.TOOL_DEFINITION, handler: DeleteForm.handleDeleteForm },
   { definition: InspectForm.TOOL_DEFINITION, handler: InspectForm.handleInspectForm },
-  { definition: AutoLayoutForm.TOOL_DEFINITION, handler: AutoLayoutForm.handleAutoLayoutForm },
   {
     definition: BatchFormOperations.TOOL_DEFINITION,
     handler: BatchFormOperations.handleBatchFormOperations,
@@ -62,10 +52,6 @@ export const TOOL_REGISTRY: readonly ToolRegistration[] = [
   {
     definition: ModifyFormComponent.TOOL_DEFINITION,
     handler: ModifyFormComponent.handleModifyFormComponent,
-  },
-  {
-    definition: ListFormComponents.TOOL_DEFINITION,
-    handler: ListFormComponents.handleListFormComponents,
   },
 
   // Property management
@@ -92,10 +78,7 @@ const dispatchMap = new Map<string, (args: any) => Promise<ToolResult>>(
  */
 const SNAPSHOT_SKIP = new Set([
   'create_form',
-  'import_form_schema',
   'delete_form',
-  'export_form',
-  'list_form_components',
   'inspect_form',
   'form_history',
   'batch_form_operations',

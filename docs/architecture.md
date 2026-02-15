@@ -194,8 +194,9 @@ direct object property changes on the in-memory `FormState.schema`.
 
 Form-js uses a fixed 16-column grid system. Components specify their width
 via `layout.columns` (1–16) and share rows via `layout.row` identifiers.
-The `auto_layout_form` tool assigns these automatically using one of three
-strategies: single-column, two-column, or compact.
+The `modify_form_component` tool with `action: "auto-layout"` assigns these
+automatically using one of three strategies: single-column, two-column, or
+compact.
 
 ### Pluggable Module Architecture
 

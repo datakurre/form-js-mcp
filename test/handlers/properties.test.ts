@@ -1,25 +1,27 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { clearForms, createForm, parseResult } from '../helpers';
 import { handleSetFormComponentProperties } from '../../src/handlers/properties/set-form-component-properties';
-import { handleListFormComponents } from '../../src/handlers/components/list-form-components';
+import { handleInspectForm } from '../../src/handlers/core/inspect-form';
 
 describe('property handlers', () => {
   beforeEach(() => {
     clearForms();
   });
 
-  // ── get component properties (via list_form_components with componentId) ──
+  // ── get component properties (via inspect_form with components facet) ──
 
-  describe('get component properties (via list_form_components)', () => {
+  describe('get component properties (via inspect_form)', () => {
     test('returns component properties', async () => {
       const { formId, form } = createForm();
       form.schema.components = [
         { type: 'textfield', id: 'a', key: 'name', label: 'Name', description: 'Enter name' },
       ];
-      const result = parseResult(await handleListFormComponents({ formId, componentId: 'a' }));
-      expect(result.properties.key).toBe('name');
-      expect(result.properties.label).toBe('Name');
-      expect(result.properties.description).toBe('Enter name');
+      const result = parseResult(
+        await handleInspectForm({ formId, include: ['components'], componentId: 'a' })
+      );
+      expect(result.components.properties.key).toBe('name');
+      expect(result.components.properties.label).toBe('Name');
+      expect(result.components.properties.description).toBe('Enter name');
     });
 
     test('omits nested components array', async () => {
@@ -32,10 +34,12 @@ describe('property handlers', () => {
           components: [{ type: 'text', id: 'inner' }],
         },
       ];
-      const result = parseResult(await handleListFormComponents({ formId, componentId: 'g1' }));
-      expect(result.properties).not.toHaveProperty('components');
-      expect(result.hasChildren).toBe(true);
-      expect(result.childCount).toBe(1);
+      const result = parseResult(
+        await handleInspectForm({ formId, include: ['components'], componentId: 'g1' })
+      );
+      expect(result.components.properties).not.toHaveProperty('components');
+      expect(result.components.hasChildren).toBe(true);
+      expect(result.components.childCount).toBe(1);
     });
   });
 

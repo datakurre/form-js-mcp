@@ -47,49 +47,32 @@ npm start
 When working with `.form` files or form schemas:
 
 1. **Always use MCP tools** — do not manually write JSON schemas; use the provided tools to create, modify, and export forms.
-2. **Start with `create_form`** or **`import_form_schema`** to get a `formId`.
+2. **Start with `create_form`** to get a `formId` — pass a `schema` param to import an existing JSON schema, or `cloneFromId` to clone an existing form.
 3. **Add components** with `add_form_component` — keyed types auto-generate unique keys.
-4. **Set properties** with `set_form_component_properties`, `set_form_validation`, `set_form_layout`, etc.
-5. **Validate** with `validate_form` before exporting.
-6. **Export** with `export_form` to get the final JSON schema.
+4. **Set properties** with `set_form_component_properties` — supports validation, layout, conditional, and option properties in a single call.
+5. **Inspect** with `inspect_form` — use facets like `"validation"`, `"summary"`, `"variables"`, `"components"`, or `"schema"` to examine the form.
+6. **Export** with `inspect_form({ include: ["schema"] })` to get the final JSON schema.
 
 ## Form Modeling Best Practices
 
 - **Naming:** Use descriptive keys that match process variable names (e.g. `firstName`, `orderAmount`).
 - **Validation:** Always set `required: true` on mandatory fields. Use `minLength`/`maxLength` for text, `min`/`max` for numbers.
-- **Layout:** The form uses a 16-column grid. Use `set_form_layout` to control column widths and `auto_layout_form` for automatic layouts.
-- **Conditionals:** Use `set_form_conditional` with FEEL expressions to show/hide fields based on other field values.
+- **Layout:** The form uses a 16-column grid. Use `set_form_component_properties` to control column widths and `modify_form_component({ action: "auto-layout" })` for automatic layouts.
+- **Conditionals:** Use `set_form_component_properties` with `conditional` in the `properties` bag to show/hide fields based on FEEL expressions.
 - **Groups:** Use `group` containers to organize related fields. Use `dynamiclist` for repeatable sections.
 
 ## Available Tools
 
-| Tool                            | Description                                          |
-| ------------------------------- | ---------------------------------------------------- |
-| `create_form`                   | Create a new empty form                              |
-| `import_form_schema`            | Import an existing JSON schema                       |
-| `export_form`                   | Export form as JSON                                  |
-| `delete_form`                   | Delete a form from memory                            |
-| `list_forms`                    | List all in-memory forms                             |
-| `clone_form`                    | Deep-clone a form with new IDs                       |
-| `validate_form`                 | Validate a form schema                               |
-| `summarize_form`                | Get a structured summary of a form                   |
-| `get_form_variables`            | Extract input/output variable keys                   |
-| `diff_forms`                    | Structural diff between two forms                    |
-| `auto_layout_form`              | Auto-assign grid layout to components                |
-| `batch_form_operations`         | Execute multiple operations atomically               |
-| `form_history`                  | Undo/redo form changes                               |
-| `add_form_component`            | Add a component to a form                            |
-| `delete_form_component`         | Remove a component                                   |
-| `move_form_component`           | Reorder or reparent a component                      |
-| `duplicate_form_component`      | Deep-clone a component                               |
-| `list_form_components`          | List components (optionally filtered)                |
-| `replace_form_component`        | Change component type preserving compatible props    |
-| `get_form_component_properties` | Read component properties                            |
-| `set_form_component_properties` | Update component properties                          |
-| `set_form_validation`           | Set validation rules on a component                  |
-| `set_form_conditional`          | Set conditional visibility                           |
-| `set_form_layout`               | Set grid layout (columns)                            |
-| `set_form_options`              | Set option values for select/radio/checklist/taglist |
+| Tool                            | Description                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| `create_form`                   | Create, clone, or import a form                                              |
+| `delete_form`                   | Delete a form from memory                                                    |
+| `inspect_form`                  | Inspect forms — list all, summarize, validate, diff, export, list components |
+| `batch_form_operations`         | Execute multiple operations atomically                                       |
+| `form_history`                  | Undo/redo form changes                                                       |
+| `add_form_component`            | Add or duplicate a component                                                 |
+| `modify_form_component`         | Delete, move, or auto-layout components                                      |
+| `set_form_component_properties` | Update component properties, validation, layout, conditionals                |
 
 ## Available Resources
 

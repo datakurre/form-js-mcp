@@ -47,7 +47,7 @@ describe('tool definitions', () => {
     }
   });
 
-  test('has at least 10 tools', () => {
-    expect(TOOL_DEFINITIONS.length).toBeGreaterThanOrEqual(10);
+  test('has at least 8 tools', () => {
+    expect(TOOL_DEFINITIONS.length).toBeGreaterThanOrEqual(8);
   });
 });

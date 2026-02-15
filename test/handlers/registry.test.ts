@@ -18,8 +18,8 @@ describe('handler registry', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  test('has at least 10 tools registered', () => {
-    expect(TOOL_DEFINITIONS.length).toBeGreaterThanOrEqual(10);
+  test('has at least 8 tools registered', () => {
+    expect(TOOL_DEFINITIONS.length).toBeGreaterThanOrEqual(8);
   });
 
   test('dispatch routes to create_form', async () => {
@@ -45,7 +45,7 @@ describe('handler registry', () => {
 
   test('dispatch does not push undo snapshot for read-only tools', async () => {
     const { formId } = createForm();
-    await dispatchToolCall('list_form_components', { formId });
+    await dispatchToolCall('inspect_form', { formId });
     expect(getHistorySize(formId).undoCount).toBe(0);
   });
 });

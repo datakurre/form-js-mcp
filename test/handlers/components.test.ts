@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { clearForms, createForm, parseResult } from '../helpers';
 import { handleAddFormComponent } from '../../src/handlers/components/add-form-component';
 import { handleModifyFormComponent } from '../../src/handlers/components/modify-form-component';
-import { handleListFormComponents } from '../../src/handlers/components/list-form-components';
+import { handleInspectForm } from '../../src/handlers/core/inspect-form';
 
 describe('component handlers', () => {
   beforeEach(() => {
@@ -248,9 +248,9 @@ describe('component handlers', () => {
     });
   });
 
-  // ── list_form_components ───────────────────────────────────────────────
+  // ── list_form_components (via inspect_form components facet) ────────────
 
-  describe('list_form_components', () => {
+  describe('list_form_components (via inspect_form)', () => {
     test('lists all components', async () => {
       const { formId, form } = createForm();
       form.schema.components = [
@@ -258,8 +258,8 @@ describe('component handlers', () => {
         { type: 'number', id: 'b', key: 'age' },
         { type: 'text', id: 'c' },
       ];
-      const result = parseResult(await handleListFormComponents({ formId }));
-      expect(result.count).toBe(3);
+      const result = parseResult(await handleInspectForm({ formId, include: ['components'] }));
+      expect(result.components.count).toBe(3);
     });
 
     test('filters by type', async () => {
@@ -268,8 +268,10 @@ describe('component handlers', () => {
         { type: 'textfield', id: 'a', key: 'name' },
         { type: 'number', id: 'b', key: 'age' },
       ];
-      const result = parseResult(await handleListFormComponents({ formId, type: 'textfield' }));
-      expect(result.count).toBe(1);
+      const result = parseResult(
+        await handleInspectForm({ formId, include: ['components'], componentType: 'textfield' })
+      );
+      expect(result.components.count).toBe(1);
     });
 
     test('lists children of container', async () => {
@@ -281,8 +283,10 @@ describe('component handlers', () => {
           components: [{ type: 'textfield', id: 'a', key: 'inner' }],
         },
       ];
-      const result = parseResult(await handleListFormComponents({ formId, parentId: 'g1' }));
-      expect(result.count).toBe(1);
+      const result = parseResult(
+        await handleInspectForm({ formId, include: ['components'], parentId: 'g1' })
+      );
+      expect(result.components.count).toBe(1);
     });
 
     test('parentId lists only direct children, not nested', async () => {
@@ -302,10 +306,12 @@ describe('component handlers', () => {
           ],
         },
       ];
-      const result = parseResult(await handleListFormComponents({ formId, parentId: 'g1' }));
+      const result = parseResult(
+        await handleInspectForm({ formId, include: ['components'], parentId: 'g1' })
+      );
       // Should only list g2 and direct, not nested inside g2
-      expect(result.count).toBe(2);
-      const ids = result.components.map((c: any) => c.id);
+      expect(result.components.count).toBe(2);
+      const ids = result.components.components.map((c: any) => c.id);
       expect(ids).toContain('g2');
       expect(ids).toContain('direct');
       expect(ids).not.toContain('nested');
