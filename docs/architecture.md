@@ -135,14 +135,14 @@ MCP Client (VS Code / Claude Desktop)
 
 ```
 AI Assistant
-    │  ReadResource("form://form/{id}/schema")
+    │  ReadResource("form://forms")
     ▼
 index.ts → readResource(uri)
     │
     ▼
 resources.ts
-    ├─ Parse URI pattern
-    ├─ Fetch form from form-manager
+    ├─ Match URI (form://forms or form://guides/form-field-reference)
+    ├─ Fetch data from form-manager (or static content)
     ├─ Format response (JSON or Markdown)
     └─ Return ResourceContent { uri, mimeType, text }
 ```
@@ -202,5 +202,5 @@ validation warnings and/or errors are included in every mutation response.
 | `src/handlers/index.ts`     | `TOOL_REGISTRY`, `TOOL_DEFINITIONS`, `dispatchToolCall`                                                        |
 | `src/handlers/helpers.ts`   | Shared handler utilities (validation, lookup, results)                                                         |
 | `src/handlers/core/`        | Form lifecycle: create, delete, list, clone, import, export, validate, summarize, diff, auto-layout, variables |
-| `src/handlers/components/`  | Component CRUD: add, delete, move, duplicate, list, replace                                                    |
-| `src/handlers/properties/`  | Property setters: set-properties, set-validation, set-conditional, set-layout, set-options                     |
+| `src/handlers/components/`  | Component CRUD: add (+ duplicate), modify (delete/move/auto-layout)                                            |
+| `src/handlers/properties/`  | Property setter: `set_form_component_properties` (type, validation, conditional, layout, options)              |

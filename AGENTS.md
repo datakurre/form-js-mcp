@@ -25,11 +25,11 @@
 | `src/handlers/helpers.ts`   | Shared handler utilities (validation, component lookup, results)                                            |
 | `src/handlers/core/`        | Form lifecycle: create (+ import/clone), delete, inspect (+ validate/summarize/diff/export/list-components) |
 | `src/handlers/components/`  | Component CRUD: add (+ duplicate), modify (delete/move/auto-layout)                                         |
-| `src/handlers/properties/`  | Property setters: set-properties, set-validation, set-conditional, set-layout, set-options                  |
+| `src/handlers/properties/`  | Property setter: `set_form_component_properties` (type, validation, conditional, layout, options)           |
 
 ## Tool Naming Convention
 
-All tool names include `form` to avoid collisions when running alongside other MCP servers (e.g. `bpmn-js-mcp`). Examples: `create_form`, `add_form_component`, `set_form_validation`.
+All tool names include `form` to avoid collisions when running alongside other MCP servers (e.g. `bpmn-js-mcp`). Examples: `create_form`, `add_form_component`, `set_form_component_properties`.
 
 ## Build & Run
 
