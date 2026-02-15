@@ -8,24 +8,24 @@
 
 ## Architecture
 
-| File                        | Responsibility                                                                                                              |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `src/index.ts`              | MCP server entry point — wires transport, tools, resources, prompts                                                         |
-| `src/module.ts`             | Generic `ToolModule` interface                                                                                              |
-| `src/form-module.ts`        | Form tool module — registers tools with the server                                                                          |
-| `src/types.ts`              | Shared types: `FormState`, `FormSchema`, `FormComponent`, `ToolResult`                                                      |
-| `src/constants.ts`          | Field type classifications, grid defaults, exporter metadata                                                                |
-| `src/form-manager.ts`       | In-memory form store (Map-based) + schema helpers                                                                           |
-| `src/validator.ts`          | Semantic validation (duplicate IDs/keys, missing keys, unknown types)                                                       |
-| `src/resources.ts`          | MCP resource endpoints (`form://` URIs)                                                                                     |
-| `src/prompts.ts`            | MCP prompt workflows                                                                                                        |
-| `src/prompt-definitions.ts` | Prompt definition objects                                                                                                   |
-| `src/tool-definitions.ts`   | Re-exports `TOOL_DEFINITIONS` from handlers                                                                                 |
-| `src/handlers/index.ts`     | `TOOL_REGISTRY`, `TOOL_DEFINITIONS`, `dispatchToolCall`                                                                     |
-| `src/handlers/helpers.ts`   | Shared handler utilities (validation, component lookup, results)                                                            |
-| `src/handlers/core/`        | Form lifecycle: create (+ import/clone), delete, inspect (+ validate/summarize/diff/export/list-components), batch, history |
-| `src/handlers/components/`  | Component CRUD: add (+ duplicate), modify (delete/move/auto-layout)                                                         |
-| `src/handlers/properties/`  | Property setters: set-properties, set-validation, set-conditional, set-layout, set-options                                  |
+| File                        | Responsibility                                                                                              |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `src/index.ts`              | MCP server entry point — wires transport, tools, resources, prompts                                         |
+| `src/module.ts`             | Generic `ToolModule` interface                                                                              |
+| `src/form-module.ts`        | Form tool module — registers tools with the server                                                          |
+| `src/types.ts`              | Shared types: `FormState`, `FormSchema`, `FormComponent`, `ToolResult`                                      |
+| `src/constants.ts`          | Field type classifications, grid defaults, exporter metadata                                                |
+| `src/form-manager.ts`       | In-memory form store (Map-based) + schema helpers                                                           |
+| `src/validator.ts`          | Semantic validation (duplicate IDs/keys, missing keys, unknown types)                                       |
+| `src/resources.ts`          | MCP resource endpoints (`form://` URIs)                                                                     |
+| `src/prompts.ts`            | MCP prompt workflows                                                                                        |
+| `src/prompt-definitions.ts` | Prompt definition objects                                                                                   |
+| `src/tool-definitions.ts`   | Re-exports `TOOL_DEFINITIONS` from handlers                                                                 |
+| `src/handlers/index.ts`     | `TOOL_REGISTRY`, `TOOL_DEFINITIONS`, `dispatchToolCall`                                                     |
+| `src/handlers/helpers.ts`   | Shared handler utilities (validation, component lookup, results)                                            |
+| `src/handlers/core/`        | Form lifecycle: create (+ import/clone), delete, inspect (+ validate/summarize/diff/export/list-components) |
+| `src/handlers/components/`  | Component CRUD: add (+ duplicate), modify (delete/move/auto-layout)                                         |
+| `src/handlers/properties/`  | Property setters: set-properties, set-validation, set-conditional, set-layout, set-options                  |
 
 ## Tool Naming Convention
 
@@ -70,8 +70,6 @@ Tests are in `test/` mirroring the `src/` structure. Test helpers are in `test/h
 
 ## Key Gotchas
 
-1. **Circular imports:** `batch-form-operations.ts` uses a lazy `await import()` for `dispatchToolCall` to avoid a circular dependency with `handlers/index.ts`.
-2. **`form_history` snapshots** are stored separately from the form store. Callers must call `pushSnapshot()` before mutations to enable undo. The handler itself does not auto-snapshot.
-3. **Hint levels:** Mutating handlers auto-append `_hints` to responses based on `form.hintLevel` (`'full'` | `'minimal'` | `'none'`).
-4. **Key uniqueness:** `add_form_component` and `duplicate_form_component` auto-deduplicate keys by appending numeric suffixes.
-5. **16-column grid:** form-js uses a fixed 16-column grid. `layout.columns` values range from 1–16.
+1. **Hint levels:** Mutating handlers auto-append `_hints` to responses based on `form.hintLevel` (`'full'` | `'minimal'` | `'none'`).
+2. **Key uniqueness:** `add_form_component` and `duplicate_form_component` auto-deduplicate keys by appending numeric suffixes.
+3. **16-column grid:** form-js uses a fixed 16-column grid. `layout.columns` values range from 1–16.

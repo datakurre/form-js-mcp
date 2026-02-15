@@ -4,19 +4,10 @@ import { handleCreateForm } from '../../src/handlers/core/create-form';
 import { handleDeleteForm } from '../../src/handlers/core/delete-form';
 import { handleInspectForm } from '../../src/handlers/core/inspect-form';
 import { handleModifyFormComponent } from '../../src/handlers/components/modify-form-component';
-import { handleBatchFormOperations } from '../../src/handlers/core/batch-form-operations';
-import {
-  handleFormHistory,
-  pushSnapshot,
-  clearAllHistory,
-  clearHistory,
-  getHistorySize,
-} from '../../src/handlers/core/form-history';
 
 describe('core handlers', () => {
   beforeEach(() => {
     clearForms();
-    clearAllHistory();
   });
 
   // ── create_form ────────────────────────────────────────────────────────
@@ -115,15 +106,6 @@ describe('core handlers', () => {
 
       // Cannot delete again
       await expect(handleDeleteForm({ formId })).rejects.toThrow('not found');
-    });
-
-    test('clears history on delete', async () => {
-      const { formId, form } = createForm();
-      pushSnapshot(formId, form.schema);
-      expect(getHistorySize(formId).undoCount).toBe(1);
-
-      await handleDeleteForm({ formId });
-      expect(getHistorySize(formId).undoCount).toBe(0);
     });
   });
 
@@ -523,170 +505,6 @@ describe('core handlers', () => {
       await expect(
         handleModifyFormComponent({ formId, action: 'auto-layout', strategy: 'invalid' })
       ).rejects.toThrow('Invalid strategy');
-    });
-  });
-
-  // ── batch_form_operations ──────────────────────────────────────────────
-
-  describe('batch_form_operations', () => {
-    test('batch succeeds', async () => {
-      const { formId } = createForm();
-      const result = parseResult(
-        await handleBatchFormOperations({
-          formId,
-          operations: [
-            {
-              tool: 'add_form_component',
-              args: { formId, type: 'textfield', label: 'Name' },
-            },
-            {
-              tool: 'add_form_component',
-              args: { formId, type: 'number', label: 'Age' },
-            },
-          ],
-        })
-      );
-      expect(result.success).toBe(true);
-      expect(result.completedOperations).toBe(2);
-    });
-
-    test('batch with error rolls back', async () => {
-      const { formId, form } = createForm();
-      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
-
-      const result = parseResult(
-        await handleBatchFormOperations({
-          formId,
-          operations: [
-            {
-              tool: 'add_form_component',
-              args: { formId, type: 'textfield', label: 'Extra' },
-            },
-            {
-              tool: 'modify_form_component',
-              args: { formId, action: 'delete', componentId: 'nonexistent' },
-            },
-          ],
-        })
-      );
-      expect(result.success).toBe(false);
-      expect(result.rolledBack).toBe(true);
-      // Should have rolled back — only original component remains
-      expect(form.schema.components).toHaveLength(1);
-      expect(form.schema.components[0].id).toBe('a');
-    });
-
-    test('rejects empty operations', async () => {
-      const { formId } = createForm();
-      await expect(handleBatchFormOperations({ formId, operations: [] })).rejects.toThrow(
-        'non-empty'
-      );
-    });
-
-    test('prevents recursive batch calls', async () => {
-      const { formId } = createForm();
-      const result = parseResult(
-        await handleBatchFormOperations({
-          formId,
-          operations: [
-            {
-              tool: 'batch_form_operations',
-              args: { formId, operations: [] },
-            },
-          ],
-        })
-      );
-      expect(result.success).toBe(false);
-      expect(result.rolledBack).toBe(true);
-    });
-  });
-
-  // ── form_history ───────────────────────────────────────────────────────
-
-  describe('form_history', () => {
-    test('undo mutation', async () => {
-      const { formId, form } = createForm();
-      form.schema.components = [];
-
-      // Push a snapshot of the empty state before mutating
-      pushSnapshot(formId, form.schema);
-
-      // Simulate a mutation
-      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
-      form.version = 1;
-
-      // Undo should restore empty state
-      const result = parseResult(await handleFormHistory({ formId, action: 'undo' }));
-      expect(result.action).toBe('undo');
-      expect(result.componentCount).toBe(0);
-      expect(form.schema.components).toHaveLength(0);
-    });
-
-    test('redo after undo', async () => {
-      const { formId, form } = createForm();
-      form.schema.components = [];
-
-      pushSnapshot(formId, form.schema);
-      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
-      form.version = 1;
-
-      // Undo
-      await handleFormHistory({ formId, action: 'undo' });
-      expect(form.schema.components).toHaveLength(0);
-
-      // Redo
-      const result = parseResult(await handleFormHistory({ formId, action: 'redo' }));
-      expect(result.action).toBe('redo');
-      expect(result.componentCount).toBe(1);
-    });
-
-    test('undo past start throws error', async () => {
-      const { formId } = createForm();
-      await expect(handleFormHistory({ formId, action: 'undo' })).rejects.toThrow(
-        'Nothing to undo'
-      );
-    });
-
-    test('redo without undo throws error', async () => {
-      const { formId } = createForm();
-      await expect(handleFormHistory({ formId, action: 'redo' })).rejects.toThrow(
-        'Nothing to redo'
-      );
-    });
-
-    test('invalid action throws error', async () => {
-      const { formId } = createForm();
-      await expect(handleFormHistory({ formId, action: 'rewind' })).rejects.toThrow(
-        'Invalid action'
-      );
-    });
-
-    test('clearHistory removes history for a form', () => {
-      const { formId, form } = createForm();
-      pushSnapshot(formId, form.schema);
-      expect(getHistorySize(formId).undoCount).toBe(1);
-      clearHistory(formId);
-      expect(getHistorySize(formId).undoCount).toBe(0);
-    });
-
-    test('getHistorySize returns zero for unknown form', () => {
-      const size = getHistorySize('nonexistent');
-      expect(size.undoCount).toBe(0);
-      expect(size.redoCount).toBe(0);
-    });
-
-    test('pushSnapshot clears redo stack', async () => {
-      const { formId, form } = createForm();
-      pushSnapshot(formId, form.schema);
-      form.schema.components = [{ type: 'textfield', id: 'a', key: 'name' }];
-
-      // Undo to create redo entry
-      await handleFormHistory({ formId, action: 'undo' });
-      expect(getHistorySize(formId).redoCount).toBe(1);
-
-      // New snapshot should clear redo stack
-      pushSnapshot(formId, form.schema);
-      expect(getHistorySize(formId).redoCount).toBe(0);
     });
   });
 });

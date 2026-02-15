@@ -68,8 +68,6 @@ When working with `.form` files or form schemas:
 | `create_form`                   | Create, clone, or import a form                                              |
 | `delete_form`                   | Delete a form from memory                                                    |
 | `inspect_form`                  | Inspect forms — list all, summarize, validate, diff, export, list components |
-| `batch_form_operations`         | Execute multiple operations atomically                                       |
-| `form_history`                  | Undo/redo form changes                                                       |
 | `add_form_component`            | Add or duplicate a component                                                 |
 | `modify_form_component`         | Delete, move, or auto-layout components                                      |
 | `set_form_component_properties` | Update component properties, validation, layout, conditionals                |
@@ -79,10 +77,6 @@ When working with `.form` files or form schemas:
 | URI Pattern                          | Description                        |
 | ------------------------------------ | ---------------------------------- |
 | `form://forms`                       | List all in-memory forms           |
-| `form://form/{formId}/summary`       | Form summary                       |
-| `form://form/{formId}/schema`        | Current JSON schema                |
-| `form://form/{formId}/validation`    | Validation issues                  |
-| `form://form/{formId}/variables`     | Input/output variables             |
 | `form://guides/form-field-reference` | Comprehensive field type reference |
 
 ## Available Prompts

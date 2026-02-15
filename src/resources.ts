@@ -2,21 +2,18 @@
  * MCP resource endpoints for form-js-mcp.
  *
  * Exposes form data as MCP resources so that AI assistants can
- * browse forms, schemas, validation issues, and variables without
- * needing to call tools.
+ * browse forms and field type documentation without needing to call tools.
+ *
+ * Per-form resources (summary, schema, validation, variables) have been
+ * removed — use `inspect_form` tool facets instead.
  *
  * URI scheme:
  *   form://forms                       — list all in-memory forms
- *   form://form/{formId}/summary       — lightweight summary
- *   form://form/{formId}/schema        — current JSON schema
- *   form://form/{formId}/validation    — validation issues
- *   form://form/{formId}/variables     — input/output variables
  *   form://guides/form-field-reference — comprehensive field type reference
  */
 
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { getAllForms, getForm } from './form-manager';
-import { validateFormSchema } from './validator';
+import { getAllForms } from './form-manager';
 import { countComponents } from './handlers/helpers';
 import {
   SUPPORTED_FIELD_TYPES,
@@ -28,7 +25,6 @@ import {
   KEYED_FIELD_TYPES,
   OPTIONS_FIELD_TYPES,
 } from './constants';
-import { type FormComponent } from './types';
 
 // ── Resource template definitions (P5.2) ───────────────────────────────────
 
@@ -37,30 +33,6 @@ export const RESOURCE_TEMPLATES = [
     uriTemplate: 'form://forms',
     name: 'All Forms',
     description: 'List all in-memory forms with summary information',
-    mimeType: 'application/json',
-  },
-  {
-    uriTemplate: 'form://form/{formId}/summary',
-    name: 'Form Summary',
-    description: 'Lightweight summary of a form (name, component count, types)',
-    mimeType: 'application/json',
-  },
-  {
-    uriTemplate: 'form://form/{formId}/schema',
-    name: 'Form Schema',
-    description: 'The full JSON schema of a form',
-    mimeType: 'application/json',
-  },
-  {
-    uriTemplate: 'form://form/{formId}/validation',
-    name: 'Form Validation',
-    description: 'Validation issues for a form (errors and warnings)',
-    mimeType: 'application/json',
-  },
-  {
-    uriTemplate: 'form://form/{formId}/variables',
-    name: 'Form Variables',
-    description: 'Input and output variables extracted from the form',
     mimeType: 'application/json',
   },
   {
@@ -93,33 +65,6 @@ export function listResources(): ResourceDescriptor[] {
     mimeType: 'application/json',
   });
 
-  // Per-form resources
-  for (const [formId, state] of forms) {
-    const label = state.name ?? formId;
-    resources.push(
-      {
-        uri: `form://form/${formId}/summary`,
-        name: `${label} — Summary`,
-        mimeType: 'application/json',
-      },
-      {
-        uri: `form://form/${formId}/schema`,
-        name: `${label} — Schema`,
-        mimeType: 'application/json',
-      },
-      {
-        uri: `form://form/${formId}/validation`,
-        name: `${label} — Validation`,
-        mimeType: 'application/json',
-      },
-      {
-        uri: `form://form/${formId}/variables`,
-        name: `${label} — Variables`,
-        mimeType: 'application/json',
-      }
-    );
-  }
-
   // Static guide
   resources.push({
     uri: 'form://guides/form-field-reference',
@@ -151,13 +96,6 @@ export function readResource(uri: string): ResourceContent {
     return readFieldReference();
   }
 
-  // form://form/{formId}/{aspect}
-  const match = /^form:\/\/form\/([^/]+)\/(summary|schema|validation|variables)$/.exec(uri);
-  if (match) {
-    const [, formId, aspect] = match;
-    return readFormAspect(formId, aspect as 'summary' | 'schema' | 'validation' | 'variables');
-  }
-
   throw new McpError(ErrorCode.InvalidRequest, `Unknown resource URI: ${uri}`);
 }
 
@@ -175,94 +113,6 @@ function readFormsList(): ResourceContent {
     uri: 'form://forms',
     mimeType: 'application/json',
     text: JSON.stringify({ count: list.length, forms: list }, null, 2),
-  };
-}
-
-function readFormAspect(
-  formId: string,
-  aspect: 'summary' | 'schema' | 'validation' | 'variables'
-): ResourceContent {
-  const state = getForm(formId);
-  if (!state) {
-    throw new McpError(ErrorCode.InvalidRequest, `Form not found: ${formId}`);
-  }
-
-  switch (aspect) {
-    case 'summary':
-      return readSummary(formId, state);
-    case 'schema':
-      return readSchema(formId, state);
-    case 'validation':
-      return readValidation(formId, state);
-    case 'variables':
-      return readVariables(formId, state);
-  }
-}
-
-function readSummary(
-  formId: string,
-  state: { schema: any; name?: string; version?: number }
-): ResourceContent {
-  const components = state.schema.components ?? [];
-  const byType: Record<string, number> = {};
-  const walkForSummary = (comps: FormComponent[]) => {
-    for (const c of comps) {
-      byType[c.type] = (byType[c.type] ?? 0) + 1;
-      if (c.components) walkForSummary(c.components);
-    }
-  };
-  walkForSummary(components);
-
-  return {
-    uri: `form://form/${formId}/summary`,
-    mimeType: 'application/json',
-    text: JSON.stringify(
-      {
-        formId,
-        name: state.name,
-        totalComponents: countComponents(components),
-        componentsByType: byType,
-        version: state.version ?? 0,
-      },
-      null,
-      2
-    ),
-  };
-}
-
-function readSchema(formId: string, state: { schema: any }): ResourceContent {
-  return {
-    uri: `form://form/${formId}/schema`,
-    mimeType: 'application/json',
-    text: JSON.stringify(state.schema, null, 2),
-  };
-}
-
-function readValidation(formId: string, state: { schema: any }): ResourceContent {
-  const result = validateFormSchema(state.schema);
-  return {
-    uri: `form://form/${formId}/validation`,
-    mimeType: 'application/json',
-    text: JSON.stringify(result, null, 2),
-  };
-}
-
-function readVariables(formId: string, state: { schema: any }): ResourceContent {
-  const inputKeys: string[] = [];
-  const walk = (comps: FormComponent[]) => {
-    for (const c of comps) {
-      if (c.key && (KEYED_FIELD_TYPES as readonly string[]).includes(c.type)) {
-        inputKeys.push(c.key);
-      }
-      if (c.components) walk(c.components);
-    }
-  };
-  walk(state.schema.components ?? []);
-
-  return {
-    uri: `form://form/${formId}/variables`,
-    mimeType: 'application/json',
-    text: JSON.stringify({ formId, inputKeys, total: inputKeys.length }, null, 2),
   };
 }
 
