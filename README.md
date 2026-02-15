@@ -51,7 +51,7 @@ When working with `.form` files or form schemas:
 3. **Add components** with `add_form_component` — keyed types auto-generate unique keys.
 4. **Set properties** with `set_form_component_properties` — supports validation, layout, conditional, and option properties in a single call.
 5. **Inspect** with `inspect_form` — use facets like `"validation"`, `"summary"`, `"variables"`, `"components"`, or `"schema"` to examine the form.
-6. **Export** with `inspect_form({ include: ["schema"] })` to get the final JSON schema.
+6. **Export** with `export_form_to_file({ filePath: "./myform.form" })` to save the form schema to a file (automatically adds .form extension).
 
 ## Form Modeling Best Practices
 
@@ -68,6 +68,7 @@ When working with `.form` files or form schemas:
 | `create_form`                   | Create, clone, or import a form                                              |
 | `delete_form`                   | Delete a form from memory                                                    |
 | `inspect_form`                  | Inspect forms — list all, summarize, validate, diff, export, list components |
+| `export_form_to_file`           | Export form schema to filesystem with .form extension                        |
 | `add_form_component`            | Add or duplicate a component                                                 |
 | `modify_form_component`         | Delete, move, or auto-layout components                                      |
 | `set_form_component_properties` | Update component properties, validation, layout, conditionals                |

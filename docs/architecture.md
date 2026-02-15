@@ -185,22 +185,22 @@ validation warnings and/or errors are included in every mutation response.
 
 ## File Responsibilities
 
-| File                        | Responsibility                                                                                                 |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `src/index.ts`              | MCP server entry point — CLI parsing, transport wiring, request routing                                        |
-| `src/module.ts`             | Generic `ToolModule` interface for pluggable modules                                                           |
-| `src/form-module.ts`        | Form tool module — registers tools, dispatches calls                                                           |
-| `src/types.ts`              | Shared types: `FormState`, `FormSchema`, `FormComponent`, `ToolResult`                                         |
-| `src/constants.ts`          | Field type classifications, grid defaults, exporter metadata                                                   |
-| `src/form-manager.ts`       | In-memory form store (`Map<string, FormState>`) + schema helpers                                               |
-| `src/validator.ts`          | Semantic validation (duplicate IDs/keys, missing keys, unknown types)                                          |
-| `src/persistence.ts`        | Optional file-backed persistence (auto-save `.form` files + `meta.json`)                                       |
-| `src/resources.ts`          | MCP resource endpoints (`form://` URIs)                                                                        |
-| `src/prompts.ts`            | MCP prompt workflow implementations                                                                            |
-| `src/prompt-definitions.ts` | Prompt definition objects (name, description, arguments)                                                       |
-| `src/tool-definitions.ts`   | Re-exports `TOOL_DEFINITIONS` from handlers                                                                    |
-| `src/handlers/index.ts`     | `TOOL_REGISTRY`, `TOOL_DEFINITIONS`, `dispatchToolCall`                                                        |
-| `src/handlers/helpers.ts`   | Shared handler utilities (validation, lookup, results)                                                         |
-| `src/handlers/core/`        | Form lifecycle: create, delete, list, clone, import, export, validate, summarize, diff, auto-layout, variables |
-| `src/handlers/components/`  | Component CRUD: add (+ duplicate), modify (delete/move/auto-layout)                                            |
-| `src/handlers/properties/`  | Property setter: `set_form_component_properties` (type, validation, conditional, layout, options)              |
+| File                        | Responsibility                                                                                                         |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `src/index.ts`              | MCP server entry point — CLI parsing, transport wiring, request routing                                                |
+| `src/module.ts`             | Generic `ToolModule` interface for pluggable modules                                                                   |
+| `src/form-module.ts`        | Form tool module — registers tools, dispatches calls                                                                   |
+| `src/types.ts`              | Shared types: `FormState`, `FormSchema`, `FormComponent`, `ToolResult`                                                 |
+| `src/constants.ts`          | Field type classifications, grid defaults, exporter metadata                                                           |
+| `src/form-manager.ts`       | In-memory form store (`Map<string, FormState>`) + schema helpers                                                       |
+| `src/validator.ts`          | Semantic validation (duplicate IDs/keys, missing keys, unknown types)                                                  |
+| `src/persistence.ts`        | Optional file-backed persistence (auto-save `.form` files + `meta.json`)                                               |
+| `src/resources.ts`          | MCP resource endpoints (`form://` URIs)                                                                                |
+| `src/prompts.ts`            | MCP prompt workflow implementations                                                                                    |
+| `src/prompt-definitions.ts` | Prompt definition objects (name, description, arguments)                                                               |
+| `src/tool-definitions.ts`   | Re-exports `TOOL_DEFINITIONS` from handlers                                                                            |
+| `src/handlers/index.ts`     | `TOOL_REGISTRY`, `TOOL_DEFINITIONS`, `dispatchToolCall`                                                                |
+| `src/handlers/helpers.ts`   | Shared handler utilities (validation, lookup, results)                                                                 |
+| `src/handlers/core/`        | Form lifecycle: create, delete, list, clone, import, export-to-file, validate, summarize, diff, auto-layout, variables |
+| `src/handlers/components/`  | Component CRUD: add (+ duplicate), modify (delete/move/auto-layout)                                                    |
+| `src/handlers/properties/`  | Property setter: `set_form_component_properties` (type, validation, conditional, layout, options)                      |

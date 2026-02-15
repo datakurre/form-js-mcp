@@ -65,7 +65,7 @@ function handleCreateUserTaskForm(args: Record<string, string>): PromptResult {
           '1. **Create the form** — `create_form` with Camunda Cloud platform\n' +
           '2. **Add fields with validation & layout** — `add_form_component` with the `properties` bag for validate, layout, conditional, etc. in a single call per field\n' +
           '3. **Inspect** — `inspect_form` to check for validation issues\n' +
-          '4. **Export** — `inspect_form` with `include: ["schema"]` to get the final JSON schema\n\n' +
+          '4. **Export** — `export_form_to_file` to save the form schema to a .form file\n\n' +
           `Let's start by creating the form:\n\n` +
           '```\n' +
           `create_form({ name: "${formName}", executionPlatform: "Camunda Cloud", executionPlatformVersion: "8.8.0" })\n` +
@@ -100,7 +100,7 @@ function handleCreateApprovalForm(args: Record<string, string>): PromptResult {
           '**Step 4: Add conditional rejection reason (with conditional + validation)**\n' +
           `\`add_form_component({ type: "textarea", key: "rejectionReason", label: "Rejection Reason", properties: { conditional: { hide: "=${approvalField} != \\"reject\\"" }, validate: { required: true } } })\`\n\n` +
           '**Step 5: Validate and export**\n' +
-          `\`inspect_form({ include: ["validation"] })\` → \`inspect_form({ include: ["schema"] })\`\n\n` +
+          `\`inspect_form({ include: ["validation"] })\` → \`export_form_to_file({ filePath: "./approval-form.form" })\`\n\n` +
           `The rejection reason field will only appear when "${approvalField}" is set to "reject".`
       ),
     ],
@@ -164,7 +164,7 @@ function handleCreateMultiStepForm(args: Record<string, string>): PromptResult {
           sectionSteps +
           '\n\n' +
           '**Step 3: Validate and export**\n' +
-          `\`inspect_form({ include: ["validation"] })\` → \`inspect_form({ include: ["schema"] })\`\n\n` +
+          `\`inspect_form({ include: ["validation"] })\` → \`export_form_to_file({ filePath: "./multi-step-form.form" })\`\n\n` +
           'Each group acts as a logical section. You can add fields to each group ' +
           'and use `set_form_component_properties` with `layout` to control column widths within sections.'
       ),

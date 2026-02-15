@@ -12,6 +12,7 @@ import { type ToolResult } from '../types';
 import * as CreateForm from './core/create-form';
 import * as DeleteForm from './core/delete-form';
 import * as InspectForm from './core/inspect-form';
+import * as ExportFormToFile from './core/export-form-to-file';
 
 // ── Component handlers ─────────────────────────────────────────────────────
 import * as AddFormComponent from './components/add-form-component';
@@ -34,6 +35,10 @@ export const TOOL_REGISTRY: readonly ToolRegistration[] = [
   { definition: CreateForm.TOOL_DEFINITION, handler: CreateForm.handleCreateForm },
   { definition: DeleteForm.TOOL_DEFINITION, handler: DeleteForm.handleDeleteForm },
   { definition: InspectForm.TOOL_DEFINITION, handler: InspectForm.handleInspectForm },
+  {
+    definition: ExportFormToFile.TOOL_DEFINITION,
+    handler: ExportFormToFile.handleExportFormToFile,
+  },
 
   // Component manipulation
   {

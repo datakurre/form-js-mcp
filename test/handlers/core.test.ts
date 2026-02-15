@@ -1,8 +1,12 @@
 import { describe, test, expect, beforeEach } from 'vitest';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { clearForms, createForm, parseResult } from '../helpers';
 import { handleCreateForm } from '../../src/handlers/core/create-form';
 import { handleDeleteForm } from '../../src/handlers/core/delete-form';
 import { handleInspectForm } from '../../src/handlers/core/inspect-form';
+import { handleExportFormToFile } from '../../src/handlers/core/export-form-to-file';
 import { handleModifyFormComponent } from '../../src/handlers/components/modify-form-component';
 
 describe('core handlers', () => {
@@ -93,6 +97,100 @@ describe('core handlers', () => {
       );
       const json = JSON.parse(result.schema);
       expect(json.components).toHaveLength(1);
+    });
+  });
+
+  // ── export_form_to_file ───────────────────────────────────────────────
+
+  describe('export_form_to_file', () => {
+    const tmpPath = join(tmpdir(), `test-export-${Date.now()}.form`);
+
+    test('exports form to file with .form extension', async () => {
+      const { formId, form } = createForm('Export Test');
+      form.schema.components = [{ type: 'textfield', id: 'f1', key: 'name', label: 'Name' }];
+
+      const result = parseResult(await handleExportFormToFile({ formId, filePath: tmpPath }));
+
+      expect(result.success).toBe(true);
+      expect(result.filePath).toBe(tmpPath);
+      expect(result.fileName).toContain('.form');
+      expect(existsSync(tmpPath)).toBe(true);
+
+      // Verify file contents
+      const content = JSON.parse(readFileSync(tmpPath, 'utf-8'));
+      expect(content.type).toBe('default');
+      expect(content.components).toHaveLength(1);
+
+      // Clean up
+      rmSync(tmpPath, { force: true });
+    });
+
+    test('auto-adds .form extension if missing', async () => {
+      const { formId } = createForm('Test');
+      const pathWithoutExt = join(tmpdir(), `test-export-${Date.now()}`);
+
+      const result = parseResult(
+        await handleExportFormToFile({ formId, filePath: pathWithoutExt })
+      );
+
+      expect(result.filePath).toContain('.form');
+      expect(existsSync(result.filePath)).toBe(true);
+
+      // Clean up
+      rmSync(result.filePath, { force: true });
+    });
+
+    test('blocks export when form has validation errors', async () => {
+      const { formId, form } = createForm('Invalid');
+      form.schema.components = [{ type: 'textfield', id: 'nokey' }];
+
+      await expect(handleExportFormToFile({ formId, filePath: tmpPath })).rejects.toThrow(
+        'Export blocked'
+      );
+    });
+
+    test('allows export with skipValidation=true despite errors', async () => {
+      const { formId, form } = createForm('Invalid');
+      form.schema.components = [{ type: 'textfield', id: 'nokey' }];
+
+      const result = parseResult(
+        await handleExportFormToFile({ formId, filePath: tmpPath, skipValidation: true })
+      );
+
+      expect(result.success).toBe(true);
+      expect(existsSync(tmpPath)).toBe(true);
+
+      // Clean up
+      rmSync(tmpPath, { force: true });
+    });
+
+    test('returns schema when returnSchema=true', async () => {
+      const { formId } = createForm('Test');
+
+      const result = parseResult(
+        await handleExportFormToFile({ formId, filePath: tmpPath, returnSchema: true })
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.schema).toBeDefined();
+      expect(typeof result.schema).toBe('string');
+
+      const parsed = JSON.parse(result.schema);
+      expect(parsed.type).toBe('default');
+
+      // Clean up
+      rmSync(tmpPath, { force: true });
+    });
+
+    test('requires formId parameter', async () => {
+      await expect(handleExportFormToFile({ filePath: tmpPath })).rejects.toThrow(
+        'formId is required'
+      );
+    });
+
+    test('requires filePath parameter', async () => {
+      const { formId } = createForm('Test');
+      await expect(handleExportFormToFile({ formId })).rejects.toThrow('filePath is required');
     });
   });
 
