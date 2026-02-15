@@ -62,17 +62,15 @@ function handleCreateUserTaskForm(args: Record<string, string>): PromptResult {
       ),
       assistantMsg(
         `I'll help you create the "${formName}" user task form. Here's the plan:\n\n` +
-          '1. **Create the form** — Use `create_form` with Camunda Cloud platform\n' +
-          '2. **Add fields** — Use `add_form_component` for each field\n' +
-          '3. **Set validation** — Use `set_form_component_properties` with `validate` to set required fields and constraints\n' +
-          '4. **Configure layout** — Use `set_form_component_properties` with `layout` for column widths and grouping\n' +
-          '5. **Validate** — Use `inspect_form` to check for issues\n' +
-          '6. **Export** — Use `export_form` to get the final JSON schema\n\n' +
+          '1. **Create the form** — `create_form` with Camunda Cloud platform\n' +
+          '2. **Add fields with validation & layout** — `add_form_component` with the `properties` bag for validate, layout, conditional, etc. in a single call per field\n' +
+          '3. **Inspect** — `inspect_form` to check for validation issues\n' +
+          '4. **Export** — `export_form` to get the final JSON schema\n\n' +
           `Let's start by creating the form:\n\n` +
           '```\n' +
           `create_form({ name: "${formName}", executionPlatform: "Camunda Cloud", executionPlatformVersion: "8.8.0" })\n` +
           '```\n\n' +
-          "After creating the form, tell me what fields you need and I'll add them with appropriate validation and layout."
+          "After creating the form, tell me what fields you need and I'll add them with validation and layout in a single call per field."
       ),
     ],
   };
@@ -95,14 +93,12 @@ function handleCreateApprovalForm(args: Record<string, string>): PromptResult {
         `I'll create the "${formName}" approval form with these components:\n\n` +
           '**Step 1: Create the form**\n' +
           `\`create_form({ name: "${formName}", executionPlatform: "Camunda Cloud" })\`\n\n` +
-          '**Step 2: Add the approval decision radio**\n' +
-          `\`add_form_component({ type: "radio", key: "${approvalField}", label: "Decision" })\`\n` +
-          `\`set_form_component_properties({ properties: { values: [{ label: "Approve", value: "approve" }, { label: "Reject", value: "reject" }], validate: { required: true } } })\`\n\n` +
+          '**Step 2: Add the approval decision radio (with options and validation)**\n' +
+          `\`add_form_component({ type: "radio", key: "${approvalField}", label: "Decision", properties: { values: [{ label: "Approve", value: "approve" }, { label: "Reject", value: "reject" }], validate: { required: true } } })\`\n\n` +
           '**Step 3: Add comments textarea**\n' +
           `\`add_form_component({ type: "textarea", key: "comments", label: "Comments" })\`\n\n` +
-          '**Step 4: Add conditional rejection reason**\n' +
-          `\`add_form_component({ type: "textarea", key: "rejectionReason", label: "Rejection Reason" })\`\n` +
-          `\`set_form_component_properties({ properties: { conditional: { hide: "=${approvalField} != \\"reject\\"" }, validate: { required: true } } })\`\n\n` +
+          '**Step 4: Add conditional rejection reason (with conditional + validation)**\n' +
+          `\`add_form_component({ type: "textarea", key: "rejectionReason", label: "Rejection Reason", properties: { conditional: { hide: "=${approvalField} != \\"reject\\"" }, validate: { required: true } } })\`\n\n` +
           '**Step 5: Validate and export**\n' +
           `\`inspect_form({ include: ["validation"] })\` → \`export_form({})\`\n\n` +
           `The rejection reason field will only appear when "${approvalField}" is set to "reject".`
@@ -125,11 +121,9 @@ function handleAddConditionalSection(args: Record<string, string>): PromptResult
       ),
       assistantMsg(
         `I'll add a conditional group to form "${formId}":\n\n` +
-          '**Step 1: Add a group container**\n' +
-          `\`add_form_component({ formId: "${formId}", type: "group", label: "Conditional Section" })\`\n\n` +
-          '**Step 2: Set the conditional hide expression**\n' +
-          `\`set_form_component_properties({ formId: "${formId}", componentId: <groupId>, properties: { conditional: { hide: "${condition}" } } })\`\n\n` +
-          '**Step 3: Add fields inside the group**\n' +
+          '**Step 1: Add a group container with conditional visibility**\n' +
+          `\`add_form_component({ formId: "${formId}", type: "group", label: "Conditional Section", properties: { conditional: { hide: "${condition}" } } })\`\n\n` +
+          '**Step 2: Add fields inside the group**\n' +
           `\`add_form_component({ formId: "${formId}", type: "textfield", parentId: <groupId>, label: "..." })\`\n\n` +
           `The group and all its children will be hidden when \`${triggerFieldKey}\` ` +
           `matches the condition \`${condition}\`.\n\n` +
