@@ -64,9 +64,9 @@ function handleCreateUserTaskForm(args: Record<string, string>): PromptResult {
         `I'll help you create the "${formName}" user task form. Here's the plan:\n\n` +
           '1. **Create the form** — Use `create_form` with Camunda Cloud platform\n' +
           '2. **Add fields** — Use `add_form_component` for each field\n' +
-          '3. **Set validation** — Use `set_form_validation` for required fields and constraints\n' +
-          '4. **Configure layout** — Use `set_form_layout` for column widths and grouping\n' +
-          '5. **Validate** — Use `validate_form` to check for issues\n' +
+          '3. **Set validation** — Use `set_form_component_properties` with `validate` to set required fields and constraints\n' +
+          '4. **Configure layout** — Use `set_form_component_properties` with `layout` for column widths and grouping\n' +
+          '5. **Validate** — Use `inspect_form` to check for issues\n' +
           '6. **Export** — Use `export_form` to get the final JSON schema\n\n' +
           `Let's start by creating the form:\n\n` +
           '```\n' +
@@ -97,16 +97,14 @@ function handleCreateApprovalForm(args: Record<string, string>): PromptResult {
           `\`create_form({ name: "${formName}", executionPlatform: "Camunda Cloud" })\`\n\n` +
           '**Step 2: Add the approval decision radio**\n' +
           `\`add_form_component({ type: "radio", key: "${approvalField}", label: "Decision" })\`\n` +
-          `\`set_form_options({ options: [{ label: "Approve", value: "approve" }, { label: "Reject", value: "reject" }] })\`\n` +
-          `\`set_form_validation({ required: true })\`\n\n` +
+          `\`set_form_component_properties({ properties: { values: [{ label: "Approve", value: "approve" }, { label: "Reject", value: "reject" }], validate: { required: true } } })\`\n\n` +
           '**Step 3: Add comments textarea**\n' +
           `\`add_form_component({ type: "textarea", key: "comments", label: "Comments" })\`\n\n` +
           '**Step 4: Add conditional rejection reason**\n' +
           `\`add_form_component({ type: "textarea", key: "rejectionReason", label: "Rejection Reason" })\`\n` +
-          `\`set_form_conditional({ hide: "=${approvalField} != \\"reject\\"" })\`\n` +
-          `\`set_form_validation({ required: true })\`\n\n` +
+          `\`set_form_component_properties({ properties: { conditional: { hide: "=${approvalField} != \\"reject\\"" }, validate: { required: true } } })\`\n\n` +
           '**Step 5: Validate and export**\n' +
-          `\`validate_form({})\` → \`export_form({})\`\n\n` +
+          `\`inspect_form({ include: ["validation"] })\` → \`export_form({})\`\n\n` +
           `The rejection reason field will only appear when "${approvalField}" is set to "reject".`
       ),
     ],
@@ -130,7 +128,7 @@ function handleAddConditionalSection(args: Record<string, string>): PromptResult
           '**Step 1: Add a group container**\n' +
           `\`add_form_component({ formId: "${formId}", type: "group", label: "Conditional Section" })\`\n\n` +
           '**Step 2: Set the conditional hide expression**\n' +
-          `\`set_form_conditional({ formId: "${formId}", componentId: <groupId>, hide: "${condition}" })\`\n\n` +
+          `\`set_form_component_properties({ formId: "${formId}", componentId: <groupId>, properties: { conditional: { hide: "${condition}" } } })\`\n\n` +
           '**Step 3: Add fields inside the group**\n' +
           `\`add_form_component({ formId: "${formId}", type: "textfield", parentId: <groupId>, label: "..." })\`\n\n` +
           `The group and all its children will be hidden when \`${triggerFieldKey}\` ` +
@@ -172,9 +170,9 @@ function handleCreateMultiStepForm(args: Record<string, string>): PromptResult {
           sectionSteps +
           '\n\n' +
           '**Step 3: Validate and export**\n' +
-          `\`validate_form({})\` → \`export_form({})\`\n\n` +
+          `\`inspect_form({ include: ["validation"] })\` → \`export_form({})\`\n\n` +
           'Each group acts as a logical section. You can add fields to each group ' +
-          'and use `set_form_layout` to control column widths within sections.'
+          'and use `set_form_component_properties` with `layout` to control column widths within sections.'
       ),
     ],
   };
@@ -200,12 +198,12 @@ function handleConvertToDynamicList(args: Record<string, string>): PromptResult 
           `\`add_form_component({ formId: "${formId}", type: "textfield", parentId: <dynamiclistId>, label: "Item Name" })\`\n` +
           `\`add_form_component({ formId: "${formId}", type: "number", parentId: <dynamiclistId>, label: "Quantity" })\`\n\n` +
           '**Step 3: Validate**\n' +
-          `\`validate_form({ formId: "${formId}" })\`\n\n` +
+          `\`inspect_form({ formId: "${formId}", include: ["validation"] })\`\n\n` +
           `The dynamiclist creates a repeatable row. Each time the user clicks "Add", ` +
           `a new set of the inner fields appears. The data is bound to the "${listFieldKey}" ` +
           `variable as an array of objects.\n\n` +
           '**Tip:** You can move existing fields into the dynamiclist using ' +
-          '`move_form_component` with `targetParentId` set to the dynamiclist ID.'
+          '`modify_form_component` with `action: "move"` and `targetParentId` set to the dynamiclist ID.'
       ),
     ],
   };

@@ -28,9 +28,9 @@ describe('form-module', () => {
     expect(data.schema.type).toBe('default');
   });
 
-  test('dispatch routes list_forms', async () => {
+  test('dispatch routes inspect_form (list mode)', async () => {
     createForm('A');
-    const result = await formModule.dispatch('list_forms', {});
+    const result = await formModule.dispatch('inspect_form', {});
     expect(result).toBeDefined();
     const data = parseResult(result!);
     expect(data.count).toBe(1);

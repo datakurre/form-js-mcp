@@ -15,31 +15,18 @@ import * as CreateForm from './core/create-form';
 import * as ImportFormSchema from './core/import-form-schema';
 import * as ExportForm from './core/export-form';
 import * as DeleteForm from './core/delete-form';
-import * as ListForms from './core/list-forms';
-import * as CloneForm from './core/clone-form';
-import * as ValidateForm from './core/validate-form';
-import * as SummarizeForm from './core/summarize-form';
-import * as GetFormVariables from './core/get-form-variables';
-import * as DiffForms from './core/diff-forms';
+import * as InspectForm from './core/inspect-form';
 import * as AutoLayoutForm from './core/auto-layout-form';
 import * as BatchFormOperations from './core/batch-form-operations';
 import * as FormHistory from './core/form-history';
 
 // ── Component handlers ─────────────────────────────────────────────────────
 import * as AddFormComponent from './components/add-form-component';
-import * as DeleteFormComponent from './components/delete-form-component';
-import * as MoveFormComponent from './components/move-form-component';
-import * as DuplicateFormComponent from './components/duplicate-form-component';
+import * as ModifyFormComponent from './components/modify-form-component';
 import * as ListFormComponents from './components/list-form-components';
-import * as ReplaceFormComponent from './components/replace-form-component';
 
 // ── Property handlers ──────────────────────────────────────────────────────
-import * as GetProps from './properties/get-form-component-properties';
 import * as SetProps from './properties/set-form-component-properties';
-import * as SetValidation from './properties/set-form-validation';
-import * as SetConditional from './properties/set-form-conditional';
-import * as SetLayout from './properties/set-form-layout';
-import * as SetOptions from './properties/set-form-options';
 
 // ── Tool registration type ─────────────────────────────────────────────────
 
@@ -59,15 +46,7 @@ export const TOOL_REGISTRY: readonly ToolRegistration[] = [
   },
   { definition: ExportForm.TOOL_DEFINITION, handler: ExportForm.handleExportForm },
   { definition: DeleteForm.TOOL_DEFINITION, handler: DeleteForm.handleDeleteForm },
-  { definition: ListForms.TOOL_DEFINITION, handler: ListForms.handleListForms },
-  { definition: CloneForm.TOOL_DEFINITION, handler: CloneForm.handleCloneForm },
-  { definition: ValidateForm.TOOL_DEFINITION, handler: ValidateForm.handleValidateForm },
-  { definition: SummarizeForm.TOOL_DEFINITION, handler: SummarizeForm.handleSummarizeForm },
-  {
-    definition: GetFormVariables.TOOL_DEFINITION,
-    handler: GetFormVariables.handleGetFormVariables,
-  },
-  { definition: DiffForms.TOOL_DEFINITION, handler: DiffForms.handleDiffForms },
+  { definition: InspectForm.TOOL_DEFINITION, handler: InspectForm.handleInspectForm },
   { definition: AutoLayoutForm.TOOL_DEFINITION, handler: AutoLayoutForm.handleAutoLayoutForm },
   {
     definition: BatchFormOperations.TOOL_DEFINITION,
@@ -81,33 +60,16 @@ export const TOOL_REGISTRY: readonly ToolRegistration[] = [
     handler: AddFormComponent.handleAddFormComponent,
   },
   {
-    definition: DeleteFormComponent.TOOL_DEFINITION,
-    handler: DeleteFormComponent.handleDeleteFormComponent,
-  },
-  {
-    definition: MoveFormComponent.TOOL_DEFINITION,
-    handler: MoveFormComponent.handleMoveFormComponent,
-  },
-  {
-    definition: DuplicateFormComponent.TOOL_DEFINITION,
-    handler: DuplicateFormComponent.handleDuplicateFormComponent,
+    definition: ModifyFormComponent.TOOL_DEFINITION,
+    handler: ModifyFormComponent.handleModifyFormComponent,
   },
   {
     definition: ListFormComponents.TOOL_DEFINITION,
     handler: ListFormComponents.handleListFormComponents,
   },
-  {
-    definition: ReplaceFormComponent.TOOL_DEFINITION,
-    handler: ReplaceFormComponent.handleReplaceFormComponent,
-  },
 
   // Property management
-  { definition: GetProps.TOOL_DEFINITION, handler: GetProps.handleGetFormComponentProperties },
   { definition: SetProps.TOOL_DEFINITION, handler: SetProps.handleSetFormComponentProperties },
-  { definition: SetValidation.TOOL_DEFINITION, handler: SetValidation.handleSetFormValidation },
-  { definition: SetConditional.TOOL_DEFINITION, handler: SetConditional.handleSetFormConditional },
-  { definition: SetLayout.TOOL_DEFINITION, handler: SetLayout.handleSetFormLayout },
-  { definition: SetOptions.TOOL_DEFINITION, handler: SetOptions.handleSetFormOptions },
 ];
 
 // ── Auto-derived exports ───────────────────────────────────────────────────
@@ -131,16 +93,10 @@ const dispatchMap = new Map<string, (args: any) => Promise<ToolResult>>(
 const SNAPSHOT_SKIP = new Set([
   'create_form',
   'import_form_schema',
-  'clone_form',
   'delete_form',
   'export_form',
-  'list_forms',
   'list_form_components',
-  'get_form_component_properties',
-  'validate_form',
-  'summarize_form',
-  'get_form_variables',
-  'diff_forms',
+  'inspect_form',
   'form_history',
   'batch_form_operations',
 ]);

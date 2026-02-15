@@ -1,21 +1,39 @@
 /**
- * list_form_components — List components in a form.
+ * list_form_components — List components in a form, or get details of one component.
+ *
+ * When `componentId` is provided, returns all properties of that specific component
+ * (formerly the separate `get_form_component_properties` tool).
+ * Otherwise lists components with optional type/parent filters.
  */
 
 import { type ToolResult, type FormComponent } from '../../types';
-import { validateArgs, requireForm, findComponentById, jsonResult } from '../helpers';
+import {
+  validateArgs,
+  requireForm,
+  requireComponent,
+  findComponentById,
+  jsonResult,
+} from '../helpers';
 
 export const TOOL_DEFINITION = {
   name: 'list_form_components',
   description:
-    'List components in a form with optional type filter. ' +
-    'Use parentId to list only children of a specific container.',
+    'List components in a form, or get detailed properties of a single component. ' +
+    'Pass `componentId` to get all properties of that specific component. ' +
+    'Without `componentId`, lists all components (optionally filtered by `type` or scoped to a `parentId` container).',
   inputSchema: {
     type: 'object',
     properties: {
       formId: { type: 'string', description: 'Target form ID' },
-      type: { type: 'string', description: 'Filter by component type' },
-      parentId: { type: 'string', description: 'List children of a specific container' },
+      componentId: {
+        type: 'string',
+        description: 'Get detailed properties of this specific component (omit to list all)',
+      },
+      type: { type: 'string', description: 'Filter by component type (list mode only)' },
+      parentId: {
+        type: 'string',
+        description: 'List children of a specific container (list mode only)',
+      },
     },
     required: ['formId'],
   },
@@ -64,6 +82,19 @@ export async function handleListFormComponents(args: any): Promise<ToolResult> {
   validateArgs(args, ['formId']);
   const form = requireForm(args.formId);
 
+  // ── Single-component detail mode ─────────────────────────────────────
+  if (args.componentId) {
+    const comp = requireComponent(form, args.componentId);
+    const { components: _children, ...properties } = comp;
+    return jsonResult({
+      componentId: args.componentId,
+      properties,
+      hasChildren: !!_children?.length,
+      childCount: _children?.length ?? 0,
+    });
+  }
+
+  // ── List mode ────────────────────────────────────────────────────────
   let components = form.schema.components;
   if (args.parentId) {
     const parent = findComponentById(form.schema.components, args.parentId);

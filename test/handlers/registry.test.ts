@@ -18,8 +18,8 @@ describe('handler registry', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  test('has at least 20 tools registered', () => {
-    expect(TOOL_DEFINITIONS.length).toBeGreaterThanOrEqual(20);
+  test('has at least 10 tools registered', () => {
+    expect(TOOL_DEFINITIONS.length).toBeGreaterThanOrEqual(10);
   });
 
   test('dispatch routes to create_form', async () => {
